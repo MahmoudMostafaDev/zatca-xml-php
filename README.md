@@ -1,53 +1,39 @@
-<div align="center">
-  <br/>
-  <img src="./docs/logo.png"/>
-  <p>v0.1.8 (experimental)</p>
-  <br/>
-  <br/>
-  <p>
-    An implementation of Saudi Arabia ZATCA's E-Invoicing requirements, processes, and standards in TypeScript. <br/>
-  </p>
-  Read the <a href="/docs">documentation PDFs</a> or <a href="https://zatca.gov.sa/en/E-Invoicing/SystemsDevelopers/Pages/TechnicalRequirementsSpec.aspx">Systems Developers</a> for more details.
-  <br/>
-  <br/>
-  <p>
+ZATCA XML
+==
 
-[![GitHub license](https://badgen.net/github/license/wes4m/zatca-xml-js?v=0.1.0)](https://github.com/wes4m/zatca-xml-js/blob/main/LICENSE)
-<a href="https://github.com/wes4m">
-<img src="https://img.shields.io/badge/maintainer-wes4m-blue"/>
-</a>
-<a href="https://badge.fury.io/js/zatca-xml-js">
-<img src="https://badge.fury.io/js/zatca-xml-js.svg/?v=0.1.8"/>
-</a>
-  </p>
+ZATCA stands for the **Zakat, Tax and Customs Authority**, which is a government agency in Saudi Arabia responsible for overseeing zakat, taxes, and customs duties. It plays a crucial role in the country's financial regulations and digital transformation initiatives, including the implementation of e-invoicing.
 
-  <a href="https://invoicen.io">
-    <p>Check out Invoicen</p>
-    <img src="https://pbs.twimg.com/profile_banners/1575491406969245698/1664461893/1500x500" style="width: 500px" />
-  </a>
-</div>
+### Overview of ZATCA
 
-# Dependencies
+- **Full Name**: Zakat, Tax and Customs Authority
+- **Established**: June 14, 1951
+- **Jurisdiction**: Government of Saudi Arabia
+- **Headquarters**: Riyadh
+- **Governor**: Suhail Abnami
+- **Parent Department**: Ministry of Finance
 
-If you plan on using the built in `EGS` module to generate keys, and CSR. The `EGS` module in the package is dependent
-on <a href="https://www.openssl.org">OpenSSL</a> being installed in the system it's running on. It's being used to
-generate an `ECDSA` key pair using the `secp256k1` curve. also to generate and sign a CSR.
+### Key Functions
+- **Tax Collection**: Responsible for the assessment and collection of various taxes, including Value Added Tax (VAT), corporate income tax, and excise tax.
+- **Zakat Management**: Oversees the collection and distribution of zakat, an obligatory form of almsgiving in Islam.
+- **Customs Duties**: Manages customs regulations and duties for imports and exports.
 
-All other parts of the package will work fine without `OpenSSL`. (meaning it supports react-native and other frameworks)
+### Digital Initiatives
+- **Fatoora Platform**: An electronic invoicing system launched on August 24, 2021, aimed at streamlining the invoicing process and enhancing compliance with tax regulations.
+- **E-Services**: Provides a range of online services for tax registration, filing returns, and managing customs declarations.
 
-# Supports
+### Strategic Goals
+- **Support Vision 2030**: Aims to enhance compliance, streamline processes, and promote trade and economic growth in alignment with Saudi Arabia's Vision 2030.
+- **Transparency and Efficiency**: Focuses on simplifying tax regulations and fostering transparency in tax obligations.
 
-All tha main futures required to on-board a new EGS. Create, sign, and report a simplified tax invoice are currently
-supported.
+### Services Offered
+- **Zakat Services**: Registration, payment, and certification of zakat.
+- **Customs Services**: Customs declarations, duties inquiries, and import/export registrations.
+- **Tax Services**: VAT registration, corporate income tax management, and excise tax services.
 
-- EGS (E-Invoice Generation System).
-  - Creation/on-boarding (Compliance and Production x.509 CSIDs).
-  - Cryptographic stamps generation.
-- Simplified Tax Invoice.
-  - Creation.
-  - Signing.
-  - Compliance checking.
-  - Reporting.
+### Benefits of Using ZATCA Portal
+- **Centralized Access**: A single platform for all tax-related services.
+- **User-Friendly Interface**: Designed for ease of use for both individuals and businesses.
+- **International Accessibility**: Available in multiple languages and accessible from anywhere.
 
 # Installation
 
@@ -60,23 +46,40 @@ php sample.php
 View full example at <a href="/sample.php">examples</a>
 
 ```php
-// New Invoice and EGS Unit
-$egs = new \Sharpvision\ZATCA\EGS($egs_unit);
 
-$egs->production = false;
+$egs = new EGS($egs_unit, Mode::Dev);
 
 // New Keys & CSR for the EGS
-list($private_key, $csr) = $egs->generateNewKeysAndCSR('solution_name');
+list($private_key, $csr) = $egs->generateNewKeysAndCSR('Jabbar Nasser Al-Bishi Co. W.L.L');
 
 // Issue a new compliance cert for the EGS
-list($request_id, $binary_security_token, $secret) = $egs->issueComplianceCertificate('123345', $csr);
+list($request_id, $binary_security_token, $secret) = $egs->issueComplianceCertificate('272826', $csr);
 
-// Sign invoice
-list($signed_invoice_string, $invoice_hash, $qr) = $egs->signInvoice($invoice, $egs_unit, $binary_security_token, $private_key);
+// build invoice
+list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice01_388($invoice, $egs_unit, $binary_security_token, $private_key);
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
 
-// Check invoice compliance
-echo($egs->checkInvoiceCompliance($signed_invoice_string, $invoice_hash, $binary_security_token, $secret));
-echo PHP_EOL;
+list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_388($invoice, $egs_unit, $binary_security_token, $private_key);
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+invoice_write($invoice_string, 'invoice');
+
+list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice01_381($invoice, $egs_unit, $binary_security_token, $private_key);
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+
+list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_381($invoice, $egs_unit, $binary_security_token, $private_key);
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+
+list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice01_383($invoice, $egs_unit, $binary_security_token, $private_key);
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+
+list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_383($invoice, $egs_unit, $binary_security_token, $private_key);
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+
+// Issue production certificate
+list($pro_request_id, $pro_binary_security_token, $pro_secret) = $egs->issueProductionCertificate($binary_security_token, $secret, $request_id);
+// var_dump($egs->productionCSIDRenewal($csr, '123456'));
+
+print_r($egs->reportInvoice($invoice_string, $invoice_hash, $pro_binary_security_token, $pro_secret));
 ```
 
 # Implementation

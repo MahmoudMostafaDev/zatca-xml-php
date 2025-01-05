@@ -12,11 +12,11 @@ XML;
 $tax_sub_total = <<<XML
 
         <cac:TaxSubtotal>
-            <cbc:TaxableAmount currencyID="SAR">46.00</cbc:TaxableAmount>
-            <cbc:TaxAmount currencyID="SAR">_6.89</cbc:TaxAmount>
+            <cbc:TaxableAmount currencyID="SAR">__46.00</cbc:TaxableAmount>
+            <cbc:TaxAmount currencyID="SAR">__6.89</cbc:TaxAmount>
             <cac:TaxCategory>
                 <cbc:ID schemeAgencyID="6" schemeID="UN/ECE 5305">__S</cbc:ID>
-                <cbc:Percent>15.00</cbc:Percent>
+                <cbc:Percent>__15.00</cbc:Percent>
                 <cac:TaxScheme>
                     <cbc:ID schemeAgencyID="6" schemeID="UN/ECE 5153">VAT</cbc:ID>
                 </cac:TaxScheme>

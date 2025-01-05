@@ -1,46 +1,57 @@
 <?php
 
-namespace Sharpvision\ZATCA;
+namespace ZATCA;
 
 use DOMDocument;
 use Exception;
+use Mode;
 
 class EGS
 {
-    private $egs_info;
+    private array $egs_info;
     private API $api;
-    public bool $production = false;
+    private Mode $production;
+    private ?DOMDocument $invoice = null;
+    private ?string $invoice_hash = null;
+    private ?string $qr = null;
+    private ?string $invoice_time;
+    private ?InvoiceBuilder $invoiceBuilder;
 
-    public function __construct(array $egs_info)
+    public function __construct(array $egs_info, Mode $mode)
     {
         $this->egs_info = $egs_info;
-        $this->api = new API();
+        $this->production = $mode;
+        $this->api = new API($this->production);
+        $this->invoice_time = date('Y-m-d\TH:i:s\Z');
     }
 
     public function generateNewKeysAndCSR(string $solution_name)
     {
         $private_key = $this->generateSecp256k1KeyPair();
+        $csr = $this->generateCSR($solution_name, $private_key);
 
-        return [$private_key, $this->generateCSR($solution_name, $private_key)];
+        return [$private_key, $csr];
     }
 
     private function generateSecp256k1KeyPair()
     {
-        $result = shell_exec('openssl ecparam -name secp256k1 -genkey');
+        $exe = shell_exec('openssl ecparam -name secp256k1 -genkey');
 
-        $result = explode('-----BEGIN EC PRIVATE KEY-----', $result);
+        $exe = explode('-----BEGIN EC PRIVATE KEY-----', $exe);
 
-        if (!isset($result[1])) throw new Exception('Error no private key found in OpenSSL output.');
+        if (!isset($exe[1]))
+            throw new Exception('Error no private key found in OpenSSL output.');
 
-        $result = trim($result[1]);
+        $exe = trim($exe[1]);
 
-        $private_key = "-----BEGIN EC PRIVATE KEY-----\n$result";
+        $private_key = "-----BEGIN EC PRIVATE KEY-----\n$exe";
         return trim($private_key);
     }
 
     private function generateCSR(string $solution_name, $private_key)
     {
-        if (!$private_key) throw new Exception('EGS has no private key');
+        if (!$private_key)
+            throw new Exception('EGS has no private key');
 
         if (!is_dir(ROOT_PATH . '/tmp/')) {
             mkdir(ROOT_PATH . '/tmp/', 0775);
@@ -52,7 +63,6 @@ class EGS
         $private_key_file = fopen($private_key_file_name, 'w');
         $csr_config_file = fopen($csr_config_file_name, 'w');
 
-        require ROOT_PATH . '/src/templates/csr_template.php';
         fwrite($private_key_file, $private_key);
         fwrite($csr_config_file, $this->defaultCSRConfig($solution_name));
 
@@ -121,9 +131,10 @@ class EGS
         );
     }
 
-    public function issueComplianceCertificate(string $otp, $csr): array
+    public function issueComplianceCertificate(string $otp, string $csr): array
     {
-        if (!$csr) throw new Exception('EGS needs to generate a CSR first.');
+        if (!$csr || !$otp)
+            throw new Exception('EGS needs to generate a CSR first.');
 
         list($issueCertificate, $checkInvoiceCompliance) = $this->api->compliance();
         $issued_data = $issueCertificate($csr, $otp);
@@ -131,41 +142,71 @@ class EGS
         return [$issued_data->requestID, $issued_data->binarySecurityToken, $issued_data->secret];
     }
 
-    public function signInvoice(array $invoice, array $egs_unit, string $certificate, string $private_key): array
+    public function buildInvoice01_388(array $invoiceInfo, array $egs_unit, mixed $certificate, mixed $private_key)
     {
-        require ROOT_PATH . '/src/ZATCASimplifiedTaxInvoice.php';
-        $zatca_simplified_tax_invoice = new ZATCASimplifiedTaxInvoice();
+        return $this->buildInvoice($invoiceInfo, $egs_unit, $certificate, $private_key, '01_388');
+    }
 
-        $invoice_xml = $zatca_simplified_tax_invoice->simplifiedTaxInvoice($invoice, $egs_unit);
+    public function buildInvoice02_388(array $invoiceInfo, array $egs_unit, mixed $certificate, mixed $private_key)
+    {
+        return $this->buildInvoice($invoiceInfo, $egs_unit, $certificate, $private_key, '02_388');
+    }
 
-        $invoice_hash = $zatca_simplified_tax_invoice->getInvoiceHash($invoice_xml);
+    public function buildInvoice01_383(array $invoiceInfo, array $egs_unit, mixed $certificate, mixed $private_key)
+    {
+        return $this->buildInvoice($invoiceInfo, $egs_unit, $certificate, $private_key, '01_383');
+    }
+
+    public function buildInvoice02_383(array $invoiceInfo, array $egs_unit, mixed $certificate, mixed $private_key)
+    {
+        return $this->buildInvoice($invoiceInfo, $egs_unit, $certificate, $private_key, '02_383');
+    }
+
+    public function buildInvoice01_381(array $invoiceInfo, array $egs_unit, mixed $certificate, mixed $private_key)
+    {
+        return $this->buildInvoice($invoiceInfo, $egs_unit, $certificate, $private_key, '01_381');
+    }
+
+    public function buildInvoice02_381(array $invoiceInfo, array $egs_unit, mixed $certificate, mixed $private_key)
+    {
+        return $this->buildInvoice($invoiceInfo, $egs_unit, $certificate, $private_key, '02_381');
+    }
+
+    private function buildInvoice(array $invoiceInfo, array $egs_unit, string $certificate, string $private_key, string $invoiceCode): array
+    {
+        $invoiceBuilder = new InvoiceBuilder();
+
+        $invoice_xml = $invoiceBuilder->invoice($invoiceInfo, $egs_unit, $invoiceCode);
+
+        $invoice_hash = $invoiceBuilder->getInvoiceHash($invoice_xml);
 
         list($hash, $issuer, $serialNumber, $public_key, $signature)
-            = $zatca_simplified_tax_invoice->getCertificateInfo($certificate);
+            = $invoiceBuilder->getCertificateInfo($certificate);
 
-        $digital_signature = $zatca_simplified_tax_invoice->createInvoiceDigitalSignature($invoice_hash, $private_key);
+        $digital_signature = $invoiceBuilder->createInvoiceDigitalSignature($invoice_hash, $private_key);
 
-        $qr = $zatca_simplified_tax_invoice->generateQR(
-            $invoice_xml,
-            $digital_signature,
-            $public_key,
-            $signature,
-            $invoice_hash
-        );
+//        $qr = $invoiceBuilder->generateQR(
+//            $invoice_xml,
+//            $digital_signature,
+//            $public_key,
+//            $signature,
+//            $this->invoice_time,
+//            $invoice_hash
+//        );
 
         $signed_properties_props = [
-            'sign_timestamp' => date('Y-m-d\TH:i:s\Z'),
+            'sign_timestamp' => $this->invoice_time,
             'certificate_hash' => $hash, // SignedSignatureProperties/SigningCertificate/CertDigest/<ds:DigestValue>SET_CERTIFICATE_HASH</ds:DigestValue>
             'certificate_issuer' => $issuer,
             'certificate_serial_number' => $serialNumber
         ];
-        $ubl_signature_signed_properties_xml_string_for_signing = $zatca_simplified_tax_invoice->defaultUBLExtensionsSignedPropertiesForSigning($signed_properties_props);
-        $ubl_signature_signed_properties_xml_string = $zatca_simplified_tax_invoice->defaultUBLExtensionsSignedProperties($signed_properties_props);
+        $ubl_signature_signed_properties_xml_string_for_signing = $invoiceBuilder->defaultUBLExtensionsSignedPropertiesForSigning($signed_properties_props);
+        $ubl_signature_signed_properties_xml_string = $invoiceBuilder->defaultUBLExtensionsSignedProperties($signed_properties_props);
 
         $signed_properties_hash = base64_encode(openssl_digest($ubl_signature_signed_properties_xml_string_for_signing, 'sha256'));
 
         // UBL Extensions
-        $ubl_signature_xml_string = $zatca_simplified_tax_invoice->defaultUBLExtensions(
+        $ubl_signature_xml_string = $invoiceBuilder->defaultUBLExtensions(
             $invoice_hash, // <ds:DigestValue>SET_INVOICE_HASH</ds:DigestValue>
             $signed_properties_hash, // SignatureInformation/Signature/SignedInfo/Reference/<ds:DigestValue>SET_SIGNED_PROPERTIES_HASH</ds:DigestValue>
             $digital_signature,
@@ -177,15 +218,24 @@ class EGS
         $unsigned_invoice_str = $invoice_xml->saveXML();
 
         $unsigned_invoice_str = str_replace('SET_UBL_EXTENSIONS_STRING', $ubl_signature_xml_string, $unsigned_invoice_str);
-        $unsigned_invoice_str = str_replace('SET_QR_CODE_DATA', $qr, $unsigned_invoice_str);
+        // $unsigned_invoice_str = str_replace('SET_QR_CODE_DATA', $qr, $unsigned_invoice_str);
 
         $signed_invoice = new DOMDocument();
         $signed_invoice->loadXML($unsigned_invoice_str);
 
-        $signed_invoice_string = $signed_invoice->saveXML();
+        $invoice_string = $signed_invoice->saveXML();
         //$signed_invoice_string = $zatca_simplified_tax_invoice->signedPropertiesIndentationFix($signed_invoice_string);
 
-        return [$signed_invoice_string, $invoice_hash, $qr];
+        $tmp_xml_path = ROOT_PATH . '/tmp/invoice.xml';
+        $invoice = fopen($tmp_xml_path, "w");
+        fwrite($invoice, $invoice_string);
+        fclose($invoice);
+        $qr = qr_get_fatoora_invoice($tmp_xml_path);
+        unlink($tmp_xml_path);
+
+        $invoice_string = str_replace('SET_QR_CODE_DATA', $qr, $invoice_string);
+
+        return [$invoice_string, $invoice_hash, $qr];
     }
 
     public function checkInvoiceCompliance(string $signed_invoice_string, string $invoice_hash, string $certificate, string $secret): string
@@ -197,5 +247,36 @@ class EGS
         $issued_data = $checkInvoiceCompliance($signed_invoice_string, $invoice_hash, $this->egs_info['uuid']);
 
         return json_encode($issued_data);
+    }
+
+    public function issueProductionCertificate(string $certificate, string $secret, int $request_id): array
+    {
+        if (!$certificate || !$secret)
+            throw new Exception('EGS is missing a certificate/private key/api secret to check the invoice compliance.');
+
+        $response = $this->api->productionCSIDs($certificate, $secret, $request_id);
+
+        return [$response->requestID, $response->binarySecurityToken, $response->secret];
+    }
+
+    public function productionCSIDRenewal(string $csr, string $otp)
+    {
+        if (!$csr)
+            throw new Exception('EGS is missing a certificate/private key/api secret to check the invoice compliance.');
+
+        return $this->api->productionCSIDsRenew($csr, $otp);
+    }
+
+    public function reportInvoice(string $invoice, string $invoice_hash, string $pro_certificate, string $pro_secret)
+    {
+        if (!$invoice_hash || !$invoice)
+            throw new Exception('invoice hash or invoice not null');
+
+        shell_exec("fatoora -sign -qr -invoice storage/invoice.xml -signedinvoice storage/invoice_signed.xml");
+        shell_exec("fatoora -invoice storage/invoice_signed.xml -invoiceRequest -apiRequest storage/invoice_signed.json");
+
+        $invoice_body = file_get_contents('storage/invoice_signed.json');
+
+        return $this->api->reporting($invoice_body, $pro_certificate, $pro_secret, 1);
     }
 }

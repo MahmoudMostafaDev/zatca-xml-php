@@ -14,7 +14,7 @@ $invoice_line = <<<XML
             <cbc:Name>__Name</cbc:Name>ClassifiedTaxCategory
         </cac:Item>
         <cac:Price>
-            <cbc:PriceAmount currencyID="SAR">10</cbc:PriceAmount>AllowanceCharge
+            <cbc:PriceAmount currencyID="SAR">__LineExtensionAmount</cbc:PriceAmount>AllowanceCharge
         </cac:Price>
     </cac:InvoiceLine>
 XML;
@@ -33,7 +33,7 @@ XML;
 $invoice_price = <<<XML
 
             <cac:AllowanceCharge>
-                <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
+                <cbc:ChargeIndicator>true</cbc:ChargeIndicator>
                 <cbc:AllowanceChargeReason>___AllowanceChargeReason</cbc:AllowanceChargeReason>
                 <cbc:Amount currencyID="SAR">___Amount</cbc:Amount>
             </cac:AllowanceCharge>
@@ -43,5 +43,5 @@ XML;
 return [
     'invoice_line' => $invoice_line,
     'invoice_item' => $invoice_item,
-    'invoice_price' => $invoice_price,
+    'invoice_price' => ''/*$invoice_price*/,
 ];

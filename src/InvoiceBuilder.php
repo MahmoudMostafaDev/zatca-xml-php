@@ -1,10 +1,10 @@
 <?php
 
-namespace Sharpvision\ZATCA;
+namespace ZATCA;
 
 use DOMDocument;
 
-class ZATCASimplifiedTaxInvoice
+class InvoiceBuilder
 {
     private $ZATCAPaymentMethods = [
         'CASH' => '10',
@@ -13,24 +13,42 @@ class ZATCASimplifiedTaxInvoice
         'BANK_CARD' => '48'
     ];
 
-    private $ZATCAInvoiceTypes = [
-        'INVOICE' => 388,
-        'DEBIT_NOTE' => 383,
-        'CREDIT_NOTE' => 381,
+    private $invoiceTypes = [
+        '01_383' => [
+            '0100000',
+            383,
+        ],
+        '02_383' => [
+            '0200000',
+            383,
+        ],
+        '01_388' => [
+            '0100000',
+            388,
+        ],
+        '02_388' => [
+            '0200000',
+            388,
+        ],
+        '01_381' => [
+            '0100000',
+            381,
+        ],
+        '02_381' => [
+            '0200000',
+            381,
+        ],
     ];
 
-    public function __construct()
-    {
-    }
-
-    public function simplifiedTaxInvoice(array $invoice, array $egs_unit)
+    public function invoice(array $invoice, array $egs_unit, string $invoiceCode)
     {
         $populated_template = require ROOT_PATH . '/src/templates/simplified_tax_invoice_template.php';
 
-        $populated_template = str_replace('SET_INVOICE_TYPE', $this->ZATCAInvoiceTypes[$egs_unit['cancelation']['cancelation_type']], trim($populated_template));
+        $populated_template = str_replace('SET_INVOICE_TYPE', $this->invoiceTypes[$invoiceCode][1], trim($populated_template));
+        $populated_template = str_replace('__invoice_type_code_attr_name', $this->invoiceTypes[$invoiceCode][0], $populated_template);
 
         // if canceled (BR-KSA-56) set reference number to canceled invoice
-        if (isset($egs_unit['cancelation']['canceled_invoice_number']) && $egs_unit['cancelation']['canceled_invoice_number']) {
+        if ($invoiceCode === '01_381' || $invoiceCode === '02_381' || $invoiceCode === '01_383' || $invoiceCode === '02_383') {
             $populated_template = str_replace('SET_BILLING_REFERENCE', $this->defaultBillingReference($egs_unit['cancelation']['canceled_invoice_number']), $populated_template);
         } else {
             $populated_template = str_replace('SET_BILLING_REFERENCE', '', $populated_template);
@@ -53,6 +71,19 @@ class ZATCASimplifiedTaxInvoice
 
         $populated_template = str_replace('SET_VAT_NUMBER', $egs_unit['VAT_number'], $populated_template);
         $populated_template = str_replace('SET_VAT_NAME', $egs_unit['VAT_name'], $populated_template);
+
+        $populated_template = str_replace('__ActualDeliveryDate', $invoice['issue_date'], $populated_template);
+
+        $populated_template = str_replace('__id', $egs_unit['AccountingCustomerParty']['__id'], $populated_template);
+        $populated_template = str_replace('__street_name', $egs_unit['AccountingCustomerParty']['__street_name'], $populated_template);
+        $populated_template = str_replace('__building_number', $egs_unit['AccountingCustomerParty']['__building_number'], $populated_template);
+        $populated_template = str_replace('__plotIdentification', $egs_unit['AccountingCustomerParty']['__plotIdentification'], $populated_template);
+        $populated_template = str_replace('__city_subdivision_name', $egs_unit['AccountingCustomerParty']['__city_subdivision_name'], $populated_template);
+        $populated_template = str_replace('__city_name', $egs_unit['AccountingCustomerParty']['__city_name'], $populated_template);
+        $populated_template = str_replace('__postal_zone', $egs_unit['AccountingCustomerParty']['__postal_zone'], $populated_template);
+        $populated_template = str_replace('__company_id', $egs_unit['AccountingCustomerParty']['__company_id'], $populated_template);
+        $populated_template = str_replace('__tax_scheme_id', $egs_unit['AccountingCustomerParty']['__tax_scheme_id'], $populated_template);
+        $populated_template = str_replace('__registration_name', $egs_unit['AccountingCustomerParty']['__registration_name'], $populated_template);
 
         $parseLineItems = $this->parseLineItems($invoice['line_items']);
         $populated_template = str_replace('PARSE_LINE_ITEMS', $parseLineItems, $populated_template);
@@ -139,7 +170,7 @@ class ZATCASimplifiedTaxInvoice
         $out = $out[1] . $out[2] . $out[3] . $out[4];
         $out = str_replace([':', ' '], '', $out);
 
-        return pack('H*', $out);
+        return @pack('H*', $out);
     }
 
     public function extractSignature($certPemString)
@@ -212,7 +243,7 @@ class ZATCASimplifiedTaxInvoice
         return trim($private_key);
     }
 
-    public function generateQR(DOMDocument $invoice_xml, string $digital_signature, $public_key, $signature, string $invoice_hash)
+    public function generateQR(DOMDocument $invoice_xml, string $digital_signature, $public_key, $signature, string $invoice_timestamp, string $invoice_hash)
     {
         // Extract required tags
         $seller_name = $invoice_xml->getElementsByTagName('AccountingSupplierParty')[0]
@@ -233,12 +264,12 @@ class ZATCASimplifiedTaxInvoice
         // Detect if simplified invoice or not (not used currently assuming all simplified tax invoice)
         //$invoice_type = $invoice_xml->getElementsByTagName('Invoice/cbc:InvoiceTypeCode')[0]['@_name'];
 
-        $formatted_datetime = date('Y-m-d\TH:i:s\Z', strtotime("{$issue_date} {$issue_time}"));
+        // $formatted_datetime = date('Y-m-d\TH:i:s\Z', strtotime("{$issue_date} {$issue_time}"));
 
         $qr_tlv = $this->TLV([
             $seller_name,
             $VAT_number,
-            $formatted_datetime,
+            $invoice_timestamp,
             $invoice_total,
             $VAT_total,
             $invoice_hash,
@@ -343,14 +374,14 @@ class ZATCASimplifiedTaxInvoice
 
         $invoice_line_items = [];
 
-        array_map(function ($line_item) use (&$total_taxes, &$total_subtotal, &$invoice_line_items) {
+        $invoice_line_items = array_map(function ($line_item) use (&$total_taxes, &$total_subtotal) {
 
             list($line_item_xml, $line_item_totals) = $this->constructLineItem($line_item);
 
             $total_taxes += $line_item_totals['taxes_total'];
             $total_subtotal += (float)$line_item_totals['subtotal'];
 
-            $invoice_line_items[] = $line_item_xml;
+            return $line_item_xml;
         }, $line_items);
 
 //        if(props.cancelation) {
@@ -375,10 +406,10 @@ class ZATCASimplifiedTaxInvoice
         foreach ($item_lines[0]['cac:TaxSubtotal'] as $line) {
 
             $l = $tax_total_template['tax_sub_total'];
-            $l = str_replace('46.00', $line['cbc:TaxableAmount']['#text'], $l);
-            $l = str_replace('_6.89', $line['cbc:TaxAmount']['#text'], $l);
+            $l = str_replace('__46.00', $line['cbc:TaxableAmount']['#text'], $l);
+            $l = str_replace('__6.89', $line['cbc:TaxAmount']['#text'], $l);
             $l = str_replace('__S', $line['cac:TaxCategory']['cbc:ID']['#text'], $l);
-            $l = str_replace('15.00', $line['cac:TaxCategory']['cbc:Percent'], $l);
+            $l = str_replace('__15.00', $line['cac:TaxCategory']['cbc:Percent'], $l);
 
             $lines .= $l;
         }
@@ -406,7 +437,7 @@ class ZATCASimplifiedTaxInvoice
          * <cac:InvoiceLine> ...
          * set invoice lines
          */
-        $invoice_line_template = require_once ROOT_PATH . '/src/templates/invoice_line_template.php';
+        $invoice_line_template = require ROOT_PATH . '/src/templates/invoice_line_template.php';
 
         $invoice_line = '';
         foreach ($invoice_line_items as $item) {
@@ -432,6 +463,7 @@ class ZATCASimplifiedTaxInvoice
 
                 $iit .= $invoice_item_template;
             }
+
             $invoice_line_template_copy = str_replace('ClassifiedTaxCategory', $iit, $invoice_line_template_copy);
 
             /*
@@ -457,7 +489,8 @@ class ZATCASimplifiedTaxInvoice
     {
         [
             $cacAllowanceCharges,
-            $cacClassifiedTaxCategories, $cacTaxTotal,
+            $cacClassifiedTaxCategories,
+            $cacTaxTotal,
             $line_item_total_tax_exclusive,
             $line_item_total_taxes,
             $line_item_total_discounts
@@ -501,8 +534,6 @@ class ZATCASimplifiedTaxInvoice
         $line_item_total_discounts = 0;
         $line_item_total_taxes = 0;
 
-        $cacAllowanceCharges = [];
-
         // VAT
         // BR-KSA-DEC-02
         $VAT = [
@@ -516,9 +547,9 @@ class ZATCASimplifiedTaxInvoice
         $cacClassifiedTaxCategories[] = $VAT;
 
         // Calc total discounts
-        array_map(function ($discount) use (&$line_item_total_discounts, &$cacAllowanceCharges) {
+        $cacAllowanceCharges = array_map(function ($discount) use (&$line_item_total_discounts) {
             $line_item_total_discounts += $discount['amount'];
-            $cacAllowanceCharges[] = [
+            return [
                 'cbc:ChargeIndicator' => 'false',
                 'cbc:AllowanceChargeReason' => $discount['reason'],
                 'cbc:Amount' => [
@@ -537,18 +568,18 @@ class ZATCASimplifiedTaxInvoice
         // BR-KSA-DEC-02
         $line_item_total_taxes = $line_item_total_taxes + ($line_item_subtotal * $line_item['VAT_percent']);
 
-        array_map(function ($tax) use (&$line_item_total_taxes, $line_item_subtotal, &$cacClassifiedTaxCategories) {
-            $line_item_total_taxes = $line_item_total_taxes + (floatval($tax['percent_amount']) * $line_item_subtotal);
+            array_map(function ($tax) use (&$line_item_total_taxes, $line_item_subtotal, &$cacClassifiedTaxCategories) {
+                $line_item_total_taxes = $line_item_total_taxes + (floatval($tax['percent_amount']) * $line_item_subtotal);
 
-            $cacClassifiedTaxCategories[] = [
-                'cbc:ID' => 'S',
-                'cbc:Percent' => number_format($tax['percent_amount'] * 100, 2, '.', ''),
-                'cac:TaxScheme' => [
-                    'cbc:ID' => 'VAT'
-                ]
-            ];
+                $cacClassifiedTaxCategories[] = [
+                    'cbc:ID' => 'S',
+                    'cbc:Percent' => number_format($tax['percent_amount'] * 100, 2, '.', ''),
+                    'cac:TaxScheme' => [
+                        'cbc:ID' => 'VAT'
+                    ]
+                ];
 
-        }, $line_item['other_taxes'] ?? [])[0] ?? [0, 0];
+            }, $line_item['other_taxes'] ?? [])[0] ?? [0, 0];
 
         // BR-KSA-DEC-03, BR-KSA-51
         $cacTaxTotal = [
@@ -565,7 +596,8 @@ class ZATCASimplifiedTaxInvoice
 
         return [
             $cacAllowanceCharges,
-            $cacClassifiedTaxCategories, $cacTaxTotal,
+            $cacClassifiedTaxCategories,
+            $cacTaxTotal,
             $line_item_subtotal,
             $line_item_total_taxes,
             $line_item_total_discounts

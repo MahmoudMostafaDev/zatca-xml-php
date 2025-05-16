@@ -1,0 +1,49 @@
+{
+  "name": "mahmoudmostafadev/zatca-xml-php",
+  "description": "An unofficial PHP library for generating ZATCA Fatoora e-invoices. This library facilitates the creation of compliant e-invoices, QR Codes, and certificates, as well as the submission of e-invoices to ZATCA's servers. It provides developers with an easy-to-use, customizable, and robust toolkit to integrate and automate ZATCA e-invoicing processes in PHP applications.",
+  "keywords": [
+    "ZATCA",
+    "invoice",
+    "e-invoice",
+    "fatoora",
+    "ublinvoice",
+    "ubl invoice",
+    "zatca-xml",
+    "electronic invoice",
+    "digital invoice",
+    "qr-code",
+    "xml",
+    "xml invoice"
+  ],
+  "homepage": "https://github.com/MahmoudMostafaDev/zatca-xml-php",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "MahmoudMostafaDev",
+      "email": "meropvo17@gmail.com",
+      "homepage": "https://github.com/MahmoudMostafaDev"
+    }
+  ],
+  "minimum-stability": "stable",
+  "require": {
+    "php": ">=8.1",
+    "ext-mbstring": "*",
+    "ext-dom": "*",
+    "ext-libxml": "*",
+    "ext-openssl": "*",
+    "ext-hash": "*",
+    "sabre/xml": "^4.0",
+    "guzzlehttp/guzzle": "^7.9",
+    "phpseclib/phpseclib": "^3.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "SauMahmoudMostafaDevceX22\\ZatcaXmlPhp\\": [
+        "src"
+      ]
+    }
+  }
+}

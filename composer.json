@@ -32,6 +32,8 @@
     "ext-libxml": "*",
     "ext-openssl": "*",
     "ext-hash": "*",
+    "ext-curl": "*",
+    "ext-json": "*",
     "sabre/xml": "^4.0",
     "guzzlehttp/guzzle": "^7.9",
     "phpseclib/phpseclib": "^3.0"

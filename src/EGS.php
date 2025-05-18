@@ -230,7 +230,14 @@ class EGS
         $invoice = fopen($tmp_xml_path, "w");
         fwrite($invoice, $invoice_string);
         fclose($invoice);
-        $qr = qr_get_fatoora_invoice($tmp_xml_path);
+        $qr = $invoiceBuilder->generateQR(
+            $invoice_xml,
+            $digital_signature,
+            $public_key,
+            $signature,
+            $this->invoice_time,
+            $invoice_hash
+        );
         unlink($tmp_xml_path);
 
         $invoice_string = str_replace('SET_QR_CODE_DATA', $qr, $invoice_string);

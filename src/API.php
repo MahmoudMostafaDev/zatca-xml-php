@@ -109,7 +109,8 @@ class API
                 CURLOPT_CUSTOMREQUEST => 'POST',
                 CURLOPT_POSTFIELDS => json_encode([
                     'invoiceHash' => $invoice_hash,
-                    'uuid' => $uuid,
+                    // TODO: find out what this is, is it egs_serial_number?
+                    'uuid' => $uuid, 
                     'invoice' => base64_encode($signed_invoice_string),
                 ]),
                 CURLOPT_HTTPHEADER => [...$headers, ...$auth_headers],

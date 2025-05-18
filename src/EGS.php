@@ -82,7 +82,7 @@ class EGS
     {
         $config = [
             'egs_model' => $this->egs_info['model'],
-            'egs_serial_number' => $this->egs_info['uuid'],
+            'egs_serial_number' => $this->egs_info['egs_serial_number'],
             'solution_name' => $solution_name,
             'vat_number' => $this->egs_info['VAT_number'],
             'branch_location' => $this->egs_info['location']['building'] . ' ' . $this->egs_info['location']['street'] . ', ' . $this->egs_info['location']['city'],
@@ -251,6 +251,7 @@ class EGS
             throw new Exception('EGS is missing a certificate/private key/api secret to check the invoice compliance.');
 
         list($issueCertificate, $checkInvoiceCompliance) = $this->api->compliance($certificate, $secret);
+        // TODO: find out what this is, is it egs_serial_number or what
         $issued_data = $checkInvoiceCompliance($signed_invoice_string, $invoice_hash, $this->egs_info['uuid']);
 
         return json_encode($issued_data);

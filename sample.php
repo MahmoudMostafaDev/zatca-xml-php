@@ -36,7 +36,7 @@ $line_item = [
 ];
 
 $egs_unit = [
-    'uuid' => EGS::uuid(),
+    'egs_serial_number' => THYAB_ORG_UUID,
     'custom_id' => 'EGS1-886431145',
     'model' => 'IOS',
     'CRN_number' => 4031006635,
@@ -71,6 +71,7 @@ $egs_unit = [
 ];
 
 $invoice = [
+    'uuid' => THYAB_INVOICE_UUID,
     'invoice_counter_number' => 23,
     'invoice_serial_number' => 'SME00023',
     'issue_date' => '2022-09-07',

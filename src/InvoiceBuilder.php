@@ -55,7 +55,7 @@ class InvoiceBuilder
         }
 
         $populated_template = str_replace('SET_INVOICE_SERIAL_NUMBER', $invoice['invoice_serial_number'], $populated_template);
-        $populated_template = str_replace('SET_TERMINAL_UUID', $egs_unit['uuid'], $populated_template);
+        $populated_template = str_replace('SET_TERMINAL_UUID', $invoice['uuid'], $populated_template);
         $populated_template = str_replace('SET_ISSUE_DATE', $invoice['issue_date'], $populated_template);
         $populated_template = str_replace('SET_ISSUE_TIME', $invoice['issue_time'], $populated_template);
         $populated_template = str_replace('SET_PREVIOUS_INVOICE_HASH', $invoice['previous_invoice_hash'], $populated_template);

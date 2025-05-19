@@ -47,7 +47,7 @@ class API
         return [];
     }
 
-    public function compliance($certificate = NULL, $secret = NULL)
+    public function compliance($certificate = NULL, $secret = NULL, string $uuid)
     {
         $auth_headers = $this->getAuthHeaders($certificate, $secret);
 

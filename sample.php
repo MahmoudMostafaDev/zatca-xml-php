@@ -120,23 +120,23 @@ list($request_id, $binary_security_token, $secret) = $egs->issueComplianceCertif
 
 // build invoice
 list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice01_388($invoice, $egs_unit, $binary_security_token, $private_key);
-$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $invoice["uuid"], $binary_security_token, $secret) . PHP_EOL;
 
 list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_388($invoice, $egs_unit, $binary_security_token, $private_key);
-$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $invoice["uuid"], $binary_security_token, $secret) . PHP_EOL;
 invoice_write($invoice_string, 'invoice');
 
 list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice01_381($invoice, $egs_unit, $binary_security_token, $private_key);
-$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $invoice["uuid"], $binary_security_token, $secret) . PHP_EOL;
 
 list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_381($invoice, $egs_unit, $binary_security_token, $private_key);
-$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $invoice["uuid"], $binary_security_token, $secret) . PHP_EOL;
 
 list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice01_383($invoice, $egs_unit, $binary_security_token, $private_key);
-$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $invoice["uuid"], $binary_security_token, $secret) . PHP_EOL;
 
 list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_383($invoice, $egs_unit, $binary_security_token, $private_key);
-$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $invoice["uuid"], $binary_security_token, $secret) . PHP_EOL;
 
 // Issue production certificate
 list($pro_request_id, $pro_binary_security_token, $pro_secret) = $egs->issueProductionCertificate($binary_security_token, $secret, $request_id);

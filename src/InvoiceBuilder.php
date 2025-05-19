@@ -74,15 +74,6 @@ class InvoiceBuilder
 
         $populated_template = str_replace('__ActualDeliveryDate', $invoice['issue_date'], $populated_template);
 
-        $populated_template = str_replace('__id', $egs_unit['AccountingCustomerParty']['__id'], $populated_template);
-        $populated_template = str_replace('__street_name', $egs_unit['AccountingCustomerParty']['__street_name'], $populated_template);
-        $populated_template = str_replace('__building_number', $egs_unit['AccountingCustomerParty']['__building_number'], $populated_template);
-        $populated_template = str_replace('__plotIdentification', $egs_unit['AccountingCustomerParty']['__plotIdentification'], $populated_template);
-        $populated_template = str_replace('__city_subdivision_name', $egs_unit['AccountingCustomerParty']['__city_subdivision_name'], $populated_template);
-        $populated_template = str_replace('__city_name', $egs_unit['AccountingCustomerParty']['__city_name'], $populated_template);
-        $populated_template = str_replace('__postal_zone', $egs_unit['AccountingCustomerParty']['__postal_zone'], $populated_template);
-        $populated_template = str_replace('__company_id', $egs_unit['AccountingCustomerParty']['__company_id'], $populated_template);
-        $populated_template = str_replace('__tax_scheme_id', $egs_unit['AccountingCustomerParty']['__tax_scheme_id'], $populated_template);
         $populated_template = str_replace('__registration_name', $egs_unit['AccountingCustomerParty']['__registration_name'], $populated_template);
 
         $parseLineItems = $this->parseLineItems($invoice['line_items']);

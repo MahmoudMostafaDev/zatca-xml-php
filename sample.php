@@ -94,7 +94,6 @@ $egs_unit = [
 //         'canceled_invoice_number' => 'SME00002',
 //     ],
 //     'AccountingCustomerParty' => [
-//         '__tax_scheme_id' => 'VAT', // Constant VAT
 //         '__registration_name' => 'Wesam Alzahir', // Customer.name from Application
 //     ],
 // ];

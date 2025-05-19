@@ -36,7 +36,7 @@ $line_item = [
 ];
 
 $egs_unit = [
-    'egs_serial_number' => THYAB_ORG_UUID,
+    'egs_serial_number' => THYAB_ORG_UUID, 
     'custom_id' => 'EGS1-886431145',
     'model' => 'IOS',
     'CRN_number' => 4031006635,
@@ -69,6 +69,35 @@ $egs_unit = [
         '__registration_name' => 'Wesam Alzahir',
     ],
 ];
+
+
+
+// $egs_unit_Structure = [
+//     'egs_serial_number' => THYAB_ORG_UUID, // will be defined in the microservice
+//     'custom_id' => 'EGS1-886431145', // CSR common name 
+//     'model' => 'IOS', // CSR model
+//     'CRN_number' => 4031006635, // سجل التجاري from Application
+//     'VAT_name' => 'Jabbar Nasser Al-Bishi Co. W.L.L', // Organization.name from Application 
+//     'VAT_number' => 399999999900003, // 310048293400003 399999999900003 // Organization.vatId from Application
+//     'location' => [ // From application
+//         'city' => 'Khobar',
+//         'city_subdivision' => 'West',
+//         'street' => 'الامير سلطان | Prince Sultan',
+//         'plot_identification' => '0000',
+//         'building' => '2322',
+//         'postal_zone' => '23333',
+//     ],
+//     'branch_name' => 'My Branch Name', // Branch.name from Application
+//     'branch_industry' => 'Thobe Tailoring',  // Constant Thobe Tailoring
+//     'cancelation' => [ // FOR DEBIT/CREDIT Task
+//         'cancelation_type' => 'INVOICE',
+//         'canceled_invoice_number' => 'SME00002',
+//     ],
+//     'AccountingCustomerParty' => [
+//         '__tax_scheme_id' => 'VAT', // Constant VAT
+//         '__registration_name' => 'Wesam Alzahir', // Customer.name from Application
+//     ],
+// ];
 
 $invoice = [
     'uuid' => THYAB_INVOICE_UUID,

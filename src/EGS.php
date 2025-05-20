@@ -245,14 +245,14 @@ class EGS
         return [$invoice_string, $invoice_hash, $qr];
     }
 
-    public function checkInvoiceCompliance(string $signed_invoice_string, string $invoice_hash, string $certificate, string $secret): string
+    public function checkInvoiceCompliance(string $signed_invoice_string, string $invoice_hash, string $certificate, string $secret, $invoice): string
     {
         if (!$certificate || !$secret)
             throw new Exception('EGS is missing a certificate/private key/api secret to check the invoice compliance.');
 
         list($issueCertificate, $checkInvoiceCompliance) = $this->api->compliance($certificate, $secret);
         // TODO: find out what this is, is it egs_serial_number or what
-        $issued_data = $checkInvoiceCompliance($signed_invoice_string, $invoice_hash, $this->egs_info['uuid']);
+        $issued_data = $checkInvoiceCompliance($signed_invoice_string, $invoice_hash, $this->$invoice['uuid']);
 
         return json_encode($issued_data);
     }
@@ -269,7 +269,7 @@ class EGS
 
     public function productionCSIDRenewal(string $csr, string $otp)
     {
-        if (!$csr)
+        if (!$csr)  
             throw new Exception('EGS is missing a certificate/private key/api secret to check the invoice compliance.');
 
         return $this->api->productionCSIDsRenew($csr, $otp);

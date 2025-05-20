@@ -27,6 +27,29 @@ $line_item = [
     'quantity' => 1,
     'tax_exclusive_price' => 10,
     'VAT_percent' => 0.15,
+    'discounts' => [
+        ['amount' => 0, 'reason' => 'A discount'],
+    ],
+];
+$line_item2 = [
+    'id' => '1',
+    'name' => 'قلم رصاص',
+    'quantity' => 1,
+    'tax_exclusive_price' => 20,
+    'VAT_percent' => 0.15,
+    'other_taxes' => [
+        //['percent_amount' => 0.5]
+    ],
+    'discounts' => [
+        ['amount' => 0, 'reason' => 'A discount'],
+    ],
+];
+$line_item3 = [
+    'id' => '1',
+    'name' => 'قلم رصاص',
+    'quantity' => 1,
+    'tax_exclusive_price' => 30,
+    'VAT_percent' => 0.15,
     'other_taxes' => [
         //['percent_amount' => 0.5]
     ],
@@ -36,13 +59,13 @@ $line_item = [
 ];
 
 $egs_unit = [
-    'uuid' => EGS::uuid(),
-    'custom_id' => 'EGS1-886431145',
-    'model' => 'IOS',
-    'CRN_number' => 4031006635,
-    'VAT_name' => 'Jabbar Nasser Al-Bishi Co. W.L.L',
-    'VAT_number' => 399999999900003, // 310048293400003 399999999900003
-    'location' => [
+    'egs_serial_number' => EGS::uuid(), // will be defined in the microservice
+    'custom_id' => 'EGS1-886431145', // CSR common name 
+    'model' => 'IOS', // CSR model
+    'CRN_number' => 4031006635, // سجل التجاري from Application
+    'VAT_name' => 'Jabbar Nasser Al-Bishi Co. W.L.L', // Organization.name from Application 
+    'VAT_number' => 399999999900003, // 310048293400003 399999999900003 // Organization.vatId from Application
+    'location' => [ // From application
         'city' => 'Khobar',
         'city_subdivision' => 'West',
         'street' => 'الامير سلطان | Prince Sultan',
@@ -50,34 +73,26 @@ $egs_unit = [
         'building' => '2322',
         'postal_zone' => '23333',
     ],
-    'branch_name' => 'My Branch Name',
-    'branch_industry' => 'Food',
-    'cancelation' => [
+    'branch_name' => 'My Branch Name', // Branch.name from Application
+    'branch_industry' => 'Thobe Tailoring',  // Constant Thobe Tailoring
+    'cancelation' => [ // FOR DEBIT/CREDIT Task
         'cancelation_type' => 'INVOICE',
         'canceled_invoice_number' => 'SME00002',
     ],
     'AccountingCustomerParty' => [
-        '__id' => 1010010000,
-        '__street_name' => 'الامير سلطان | Prince Sultan',
-        '__building_number' => '2322',
-        '__plotIdentification' => '0000',
-        '__city_subdivision_name' => 'West',
-        '__city_name' => 'Khobar',
-        '__postal_zone' => '23333',
-        '__company_id' => 301121965500003,
-        '__tax_scheme_id' => 'VAT',
-        '__registration_name' => 'Wesam Alzahir',
+        '__registration_name' => 'Wesam Alzahir', // Customer.name from Application
     ],
 ];
 
 $invoice = [
+    "uuid" => EGS::uuid(),
     'invoice_counter_number' => 23,
     'invoice_serial_number' => 'SME00023',
-    'issue_date' => '2022-09-07',
+    'issue_date' => '2025-05-19',
     'issue_time' => '12:21:28',
     'previous_invoice_hash' => 'NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZiNTdlOQ==', // AdditionalDocumentReference/PIH
     'line_items' => [
-        $line_item,
+        $line_item,$line_item2,$line_item3
     ],
 ];
 
@@ -90,7 +105,7 @@ $binary_security_token = "-----BEGIN CERTIFICATE-----MIICPTCCAeOgAwIBAgIGAYzzgEh
 // list($request_id, $binary_security_token, $secret) = $egs->issueComplianceCertificate('272826', $csr);
 
 // build invoice
-list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice01_388($invoice, $egs_unit, $binary_security_token, $private_key);
+list($invoice_string, $invoice_hash, $qr) = $egs-> buildInvoice01_388($invoice, $egs_unit, $binary_security_token, $private_key);
 // $egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
 
 // list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_388($invoice, $egs_unit, $binary_security_token, $private_key);
@@ -117,7 +132,7 @@ list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice01_388($invoice, $
 
 // echo PHP_EOL;
  
-$handle = fopen('invoice.xml', 'w');
+$handle = fopen('invoicee.xml', 'w');
 fwrite($handle, $invoice_string);
 fclose($handle);
 

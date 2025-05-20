@@ -664,8 +664,10 @@ class InvoiceBuilder
             ];
         };
 
-        $taxes_total = 0;
-        array_map(function ($line_item) use (&$addTaxSubtotal, &$taxes_total) {
+        
+    $taxes_total = 0;
+        echo''. $line_items .'';
+    array_map(function ($line_item) use (&$addTaxSubtotal, &$taxes_total) {
             $total_line_item_discount = array_reduce($line_item['discounts'], function ($p, $c) {
                 return $p + $c['amount'];
             }, 0);
@@ -674,12 +676,8 @@ class InvoiceBuilder
             $tax_amount = ((float)$line_item['VAT_percent']) * ((float)$taxable_amount);
             $addTaxSubtotal($taxable_amount, $tax_amount, $line_item['VAT_percent']);
             $taxes_total += $tax_amount;
-            array_map(function ($tax) use (&$taxable_amount, &$addTaxSubtotal, &$taxes_total) {
-                $tax_amount = $tax['percent_amount'] * $taxable_amount;
-                $addTaxSubtotal($taxable_amount, $tax_amount, $tax['percent_amount']);
-                $taxes_total += $tax_amount;
-            }, $line_item['other_taxes']);
         }, $line_items);
+
 
         // BT-110
         $taxes_total = number_format($taxes_total, 2, '.', '');

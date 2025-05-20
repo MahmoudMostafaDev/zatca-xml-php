@@ -1,9 +1,9 @@
 <?php
 
 namespace ZATCA;
-
+require_once ROOT_PATH . '/src/helpers/utils.php';
 use DOMDocument;
-
+use ZATCA\getFormattedOrderId;
 class InvoiceBuilder
 {
     private $ZATCAPaymentMethods = [
@@ -54,7 +54,7 @@ class InvoiceBuilder
             $populated_template = str_replace('SET_BILLING_REFERENCE', '', $populated_template);
         }
 
-        $populated_template = str_replace('SET_INVOICE_SERIAL_NUMBER', $invoice['invoice_serial_number'], $populated_template);
+        $populated_template = str_replace('SET_INVOICE_SERIAL_NUMBER', getFormattedOrderId($invoice["invoice_counter_number"],$invoice["issue_date"]), $populated_template);
         $populated_template = str_replace('SET_TERMINAL_UUID', $invoice['uuid'], $populated_template);
         $populated_template = str_replace('SET_ISSUE_DATE', $invoice['issue_date'], $populated_template);
         $populated_template = str_replace('SET_ISSUE_TIME', $invoice['issue_time'], $populated_template);

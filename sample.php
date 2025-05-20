@@ -68,6 +68,7 @@ $egs_unit = [
 ];
 
 
+// this is the structure of the egs down here
 
 // $egs_unit_Structure = [
 //     'egs_serial_number' => THYAB_ORG_UUID, // will be defined in the microservice
@@ -98,7 +99,6 @@ $egs_unit = [
 $invoice = [
     'uuid' => THYAB_INVOICE_UUID,
     'invoice_counter_number' => 23,
-    'invoice_serial_number' => 'SME00023',
     'issue_date' => '2022-09-07',
     'issue_time' => '12:21:28',
     'previous_invoice_hash' => 'NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZiNTdlOQ==', // AdditionalDocumentReference/PIH
@@ -107,10 +107,11 @@ $invoice = [
     ],
 ];
 
+// this is the structure of the invoice down here
+ 
 // $invoice = [
 //     'uuid' => THYAB_INVOICE_UUID,
 //     'invoice_counter_number' => 23, // universal unique invoice counter number
-//     'invoice_serial_number' =>  // INV-20245215 using utils getFormattedOrderId(id, date)
 //     'issue_date' => '2022-09-07',
 //     'issue_time' => '12:21:28',
 //     "delivery_date" => '2022-09-07',

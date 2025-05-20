@@ -27,10 +27,7 @@ $line_item = [
     'quantity' => 1,
     'tax_exclusive_price' => 10,
     'VAT_percent' => 0.15,
-    'other_taxes' => [
-        //['percent_amount' => 0.5]
-    ],
-    'discounts' => [
+    'discounts' => [  // maybe take the discount amount from app and divide it by the total and apply percentage to the rest
         ['amount' => 0, 'reason' => 'A discount'],
     ],
 ];
@@ -109,6 +106,19 @@ $invoice = [
         $line_item,
     ],
 ];
+
+// $invoice = [
+//     'uuid' => THYAB_INVOICE_UUID,
+//     'invoice_counter_number' => 23, // universal unique invoice counter number
+//     'invoice_serial_number' =>  // INV-20245215 using utils getFormattedOrderId(id, date)
+//     'issue_date' => '2022-09-07',
+//     'issue_time' => '12:21:28',
+//     "delivery_date" => '2022-09-07',
+//     'previous_invoice_hash', // from database 
+//     'line_items' => [
+//         $line_item,
+//     ],
+// ];
 
 $egs = new EGS($egs_unit, Mode::Dev);
 

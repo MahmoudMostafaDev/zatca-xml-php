@@ -1,9 +1,13 @@
 <?php
 
 namespace ZATCA;
+
 require_once ROOT_PATH . '/src/helpers/utils.php';
+
 use DOMDocument;
+use SebastianBergmann\CodeCoverage\Util\Percentage;
 use ZATCA\getFormattedOrderId;
+
 class InvoiceBuilder
 {
     private $ZATCAPaymentMethods = [
@@ -54,7 +58,7 @@ class InvoiceBuilder
             $populated_template = str_replace('SET_BILLING_REFERENCE', '', $populated_template);
         }
 
-        $populated_template = str_replace('SET_INVOICE_SERIAL_NUMBER', getFormattedOrderId($invoice["invoice_counter_number"],$invoice["issue_date"]), $populated_template);
+        $populated_template = str_replace('SET_INVOICE_SERIAL_NUMBER', getFormattedOrderId($invoice["invoice_counter_number"], $invoice["issue_date"]), $populated_template);
         $populated_template = str_replace('SET_TERMINAL_UUID', $invoice['uuid'], $populated_template);
         $populated_template = str_replace('SET_ISSUE_DATE', $invoice['issue_date'], $populated_template);
         $populated_template = str_replace('SET_ISSUE_TIME', $invoice['issue_time'], $populated_template);
@@ -366,23 +370,21 @@ class InvoiceBuilder
         $invoice_line_items = [];
 
         $invoice_line_items = array_map(function ($line_item) use (&$total_taxes, &$total_subtotal) {
-
             list($line_item_xml, $line_item_totals) = $this->constructLineItem($line_item);
-
             $total_taxes += $line_item_totals['taxes_total'];
             $total_subtotal += (float)$line_item_totals['subtotal'];
 
             return $line_item_xml;
         }, $line_items);
 
-//        if(props.cancelation) {
-//            // Invoice canceled. Tunred into credit/debit note. Must have PaymentMeans
-//            // BR-KSA-17
-//            $this->invoice_xml.set('Invoice/cac:PaymentMeans', false, {
-//                'cbc:PaymentMeansCode': props.cancelation.payment_method,
-//                'cbc:InstructionNote': props.cancelation.reason ?? 'No note Specified'
-//            });
-//        }
+        //        if(props.cancelation) {
+        //            // Invoice canceled. Tunred into credit/debit note. Must have PaymentMeans
+        //            // BR-KSA-17
+        //            $this->invoice_xml.set('Invoice/cac:PaymentMeans', false, {
+        //                'cbc:PaymentMeansCode': props.cancelation.payment_method,
+        //                'cbc:InstructionNote': props.cancelation.reason ?? 'No note Specified'
+        //            });
+        //        }
 
         /*
          * <cac:TaxTotal>
@@ -440,6 +442,7 @@ class InvoiceBuilder
             $invoice_line_template_copy = str_replace('__LineExtensionAmount', $item['cbc:LineExtensionAmount']['#text'], $invoice_line_template_copy);
             $invoice_line_template_copy = str_replace('__TaxAmount', $item['cac:TaxTotal']['cbc:TaxAmount']['#text'], $invoice_line_template_copy);
             $invoice_line_template_copy = str_replace('__RoundingAmount', $item['cac:TaxTotal']['cbc:RoundingAmount']['#text'], $invoice_line_template_copy);
+            $invoice_line_template_copy = str_replace('__Price', $item['cac:Price']['cbc:PriceAmount']['#text'], $invoice_line_template_copy);
 
             $invoice_line_template_copy = str_replace('__Name', $item['cac:Item']['cbc:Name'], $invoice_line_template_copy);
 
@@ -461,13 +464,14 @@ class InvoiceBuilder
              *
              */
             $ipt = '';
-            foreach ($item['cac:Price']['cac:AllowanceCharge'] as $AllowanceCharge) {
-                $invoice_price_template = $invoice_line_template['invoice_price'];
-                $invoice_price_template = str_replace('___AllowanceChargeReason', $AllowanceCharge['cbc:AllowanceChargeReason'], $invoice_price_template);
-                $invoice_price_template = str_replace('___Amount', $AllowanceCharge['cbc:Amount']['#text'], $invoice_price_template);
+            $AllowanceCharge = $item['cac:Price']['cac:AllowanceCharge'];
+            $invoice_price_template = $invoice_line_template['invoice_price'];
+            $invoice_price_template = str_replace('___ChargeIndicator', $AllowanceCharge['cbc:ChargeIndicator'], $invoice_price_template);
+            $invoice_price_template = str_replace('___AllowanceChargeReason',  $AllowanceCharge['cbc:AllowanceChargeReason'], $invoice_price_template);
+            $invoice_price_template = str_replace('___Amount', $AllowanceCharge['cbc:Amount']['#text'], $invoice_price_template);
+            $invoice_price_template = str_replace('___BaseAmount', $AllowanceCharge['cbc:BaseAmount']['#text'], $invoice_price_template);
+            $ipt .= $invoice_price_template;
 
-                $ipt .= $invoice_price_template;
-            }
             $invoice_line_template_copy = str_replace('AllowanceCharge', $ipt, $invoice_line_template_copy);
 
             $invoice_line .= $invoice_line_template_copy;
@@ -482,13 +486,16 @@ class InvoiceBuilder
             $cacAllowanceCharges,
             $cacClassifiedTaxCategories,
             $cacTaxTotal,
+            $price,
             $line_item_total_tax_exclusive,
             $line_item_total_taxes,
             $line_item_total_discounts
         ] = $this->constructLineItemTotals($line_item);
 
+
         return [
-            /*'line_item_xml' => */ [
+            /*'line_item_xml' => */
+            [
                 'cbc:ID' => $line_item['id'],
                 'cbc:InvoicedQuantity' => [
                     '@_unitCode' => 'PCE',
@@ -507,12 +514,13 @@ class InvoiceBuilder
                 'cac:Price' => [
                     'cbc:PriceAmount' => [
                         '@_currencyID' => 'SAR',
-                        '#text' => $line_item['tax_exclusive_price']
+                        '#text' => $price
                     ],
                     'cac:AllowanceCharge' => $cacAllowanceCharges
                 ]
             ],
-            /*'line_item_totals' => */ [
+            /*'line_item_totals' => */
+            [
                 'taxes_total' => $line_item_total_taxes,
                 'discounts_total' => $line_item_total_discounts,
                 'subtotal' => $line_item_total_tax_exclusive
@@ -524,7 +532,9 @@ class InvoiceBuilder
     {
         $line_item_total_discounts = 0;
         $line_item_total_taxes = 0;
-
+        $line_item_total_discounts = $line_item["tax_exclusive_price"] * $line_item['quantity'] * $line_item['discount']['percentage'];
+        // LineExtensionAmount
+        $line_item_subtotal = $line_item["tax_exclusive_price"] * $line_item['quantity'] - $line_item_total_discounts;
         // VAT
         // BR-KSA-DEC-02
         $VAT = [
@@ -538,39 +548,41 @@ class InvoiceBuilder
         $cacClassifiedTaxCategories[] = $VAT;
 
         // Calc total discounts
-        $cacAllowanceCharges = array_map(function ($discount) use (&$line_item_total_discounts) {
-            $line_item_total_discounts += $discount['amount'];
-            return [
-                'cbc:ChargeIndicator' => 'false',
-                'cbc:AllowanceChargeReason' => $discount['reason'],
-                'cbc:Amount' => [
-                    '@_currencyID' => 'SAR',
-                    // BR-DEC-01
-                    '#text' => number_format($discount['amount'], 2, '.', '')
-                ]
-            ];
-        }, $line_item['discounts'] ?? []);
+        // $cacAllowanceCharges = array_map(function ($discount) use (&$line_item_total_discounts) {
+        //     $line_item_total_discounts += $line_item["tax_exclusive_price"] * $line_item['quantity'] * $discount['percentage'] / 100;
+        //     return [
+        //         'cbc:ChargeIndicator' => 'false',
+        //         'cbc:AllowanceChargeReason' => $discount['reason'],
+        //         'cbc:Amount' => [
+        //             '@_currencyID' => 'SAR',
+        //             // BR-DEC-01
+        //             '#text' => number_format($discount['amount'], 2, '.', '')
+        //         ]
+        //     ];
+        // }, $line_item['discounts'] ?? [] );
 
+        // NO NEED FOR LOOP WE WILL HAVE ONLY ONE DISCOUNT
 
-        // Calc item subtotal
-        $line_item_subtotal = ($line_item['tax_exclusive_price'] * $line_item['quantity']) - $line_item_total_discounts;
+        $cacAllowanceCharges = [
+            'cbc:ChargeIndicator' => 'false',
+            'cbc:AllowanceChargeReason' => $line_item['discount']['reason'],
+            'cbc:Amount' => [
+                '@_currencyID' => 'SAR',
+                // BR-DEC-01
+                '#text' => number_format($line_item["tax_exclusive_price"] * $line_item["discount"]["percentage"], 2, '.', '')
+            ],
+            'cbc:BaseAmount' => [
+                '@_currencyID' => 'SAR',
+                // BR-DEC-01
+                '#text' => number_format($line_item["tax_exclusive_price"], 2, '.', '')
+            ]
+
+        ];
+
 
         // Calc total taxes
         // BR-KSA-DEC-02
         $line_item_total_taxes = $line_item_total_taxes + ($line_item_subtotal * $line_item['VAT_percent']);
-
-            array_map(function ($tax) use (&$line_item_total_taxes, $line_item_subtotal, &$cacClassifiedTaxCategories) {
-                $line_item_total_taxes = $line_item_total_taxes + (floatval($tax['percent_amount']) * $line_item_subtotal);
-
-                $cacClassifiedTaxCategories[] = [
-                    'cbc:ID' => 'S',
-                    'cbc:Percent' => number_format($tax['percent_amount'] * 100, 2, '.', ''),
-                    'cac:TaxScheme' => [
-                        'cbc:ID' => 'VAT'
-                    ]
-                ];
-
-            }, $line_item['other_taxes'] ?? [])[0] ?? [0, 0];
 
         // BR-KSA-DEC-03, BR-KSA-51
         $cacTaxTotal = [
@@ -584,11 +596,12 @@ class InvoiceBuilder
             ]
         ];
 
-
+        $price =  $line_item["tax_exclusive_price"] - ($line_item["tax_exclusive_price"] * $line_item['discount']['percentage']);
         return [
             $cacAllowanceCharges,
             $cacClassifiedTaxCategories,
             $cacTaxTotal,
+            $price,
             $line_item_subtotal,
             $line_item_total_taxes,
             $line_item_total_discounts
@@ -633,26 +646,65 @@ class InvoiceBuilder
     {
         $cacTaxSubtotal = [];
         // BR-DEC-13, MESSAGE : [BR-DEC-13]-The allowed maximum number of decimals for the Invoice total VAT amount (BT-110) is 2.
-        $addTaxSubtotal = function ($taxable_amount, $tax_amount, $tax_percent) use (&$cacTaxSubtotal) {
+        $sumTaxAmountS = 0;
+        $sumTaxAmountO = 0;
+
+        $sumTaxableS = 0;
+        $sumTaxablesO = 0;
+
+        $hasCategoryS = false;
+        $hasCategoryO = false;
+
+        $addTaxSubtotal = function ($taxable_amount, $tax_amount, $tax_percent) use (&$sumTaxableS, &$sumTaxAmountS, &$sumTaxablesO, &$sumTaxAmountO, &$hasCategoryS, &$hasCategoryO) {
+            if ($tax_percent) {
+                $sumTaxableS += $taxable_amount;
+                $sumTaxAmountS += $tax_amount;
+                $hasCategoryS = true;
+            } else {
+                $sumTaxablesO += $taxable_amount;
+                $sumTaxAmountO += $tax_amount;
+                $hasCategoryO = true;
+            }
+        };
+
+
+
+        $taxes_total = 0;
+        echo '' . $line_items . '';
+        array_map(function ($line_item) use (&$addTaxSubtotal, &$taxes_total) {
+            $total_line_item_discount = $line_item['discount']['percentage'] > 0 ? $line_item['discount']['percentage'] * $line_item['tax_exclusive_price'] * $line_item['quantity'] : 0;
+            $taxable_amount = ($line_item['tax_exclusive_price'] * $line_item['quantity']) - ($total_line_item_discount ?? 0);
+
+            $tax_amount = ((float)$line_item['VAT_percent']) * ((float)$taxable_amount);
+            $addTaxSubtotal($taxable_amount, $tax_amount, $line_item['VAT_percent']);
+            $taxes_total += $tax_amount;
+        }, $line_items);
+
+        printf($sumTaxableS);
+        printf($sumTaxAmountO);
+        printf($sumTaxablesO);
+        printf($hasCategoryS);
+
+        if ($hasCategoryS) {
             $cacTaxSubtotal[] = [
                 // BR-DEC-19
                 'cbc:TaxableAmount' => [
                     '@_currencyID' => 'SAR',
-                    '#text' => number_format((float)($taxable_amount), 2, '.', '')
+                    '#text' => number_format((float)($sumTaxableS), 2, '.', '')
                 ],
                 'cbc:TaxAmount' => [
                     '@_currencyID' => 'SAR',
-                    '#text' => number_format((float)($tax_amount), 2, '.', '')
+                    '#text' => number_format((float)($sumTaxAmountS), 2, '.', '')
                 ],
                 'cac:TaxCategory' => [
                     'cbc:ID' => [
                         '@_schemeAgencyID' => 6,
                         '@_schemeID' => 'UN/ECE 5305',
-                        '#text' => $tax_percent ? 'S' : 'O'
+                        '#text' => 'S',
                     ],
-                    'cbc:Percent' => number_format((float)$tax_percent * 100.00, 2, '.', ''),
+                    'cbc:Percent' => number_format((float) 0.15 * 100.00, 2, '.', ''),
                     // BR-O-10
-                    'cbc:TaxExemptionReason' => $tax_percent ? '' : 'Not subject to VAT',
+                    'cbc:TaxExemptionReason' =>  '',
                     'cac:TaxScheme' => [
                         'cbc:ID' => [
                             '@_schemeAgencyID' => 6,
@@ -662,22 +714,36 @@ class InvoiceBuilder
                     ],
                 ]
             ];
-        };
-
-        
-    $taxes_total = 0;
-        echo''. $line_items .'';
-    array_map(function ($line_item) use (&$addTaxSubtotal, &$taxes_total) {
-            $total_line_item_discount = array_reduce($line_item['discounts'], function ($p, $c) {
-                return $p + $c['amount'];
-            }, 0);
-            $taxable_amount = ($line_item['tax_exclusive_price'] * $line_item['quantity']) - ($total_line_item_discount ?? 0);
-
-            $tax_amount = ((float)$line_item['VAT_percent']) * ((float)$taxable_amount);
-            $addTaxSubtotal($taxable_amount, $tax_amount, $line_item['VAT_percent']);
-            $taxes_total += $tax_amount;
-        }, $line_items);
-
+        } else {
+            $cacTaxSubtotal[] = [
+                // BR-DEC-19
+                'cbc:TaxableAmount' => [
+                    '@_currencyID' => 'SAR',
+                    '#text' => number_format((float)($sumTaxablesO), 2, '.', '')
+                ],
+                'cbc:TaxAmount' => [
+                    '@_currencyID' => 'SAR',
+                    '#text' => number_format((float)($sumTaxAmountO), 2, '.', '')
+                ],
+                'cac:TaxCategory' => [
+                    'cbc:ID' => [
+                        '@_schemeAgencyID' => 6,
+                        '@_schemeID' => 'UN/ECE 5305',
+                        '#text' =>  'O'
+                    ],
+                    'cbc:Percent' => number_format((float)0 * 100.00, 2, '.', ''),
+                    // BR-O-10
+                    'cbc:TaxExemptionReason' => 'Not subject to VAT',
+                    'cac:TaxScheme' => [
+                        'cbc:ID' => [
+                            '@_schemeAgencyID' => 6,
+                            '@_schemeID' => 'UN/ECE 5153',
+                            '#text' => 'VAT'
+                        ]
+                    ],
+                ]
+            ];
+        }
 
         // BT-110
         $taxes_total = number_format($taxes_total, 2, '.', '');

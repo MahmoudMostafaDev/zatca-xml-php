@@ -24,25 +24,25 @@ load_helpers('qr', 'invoice');
 $line_item = [
     'id' => '1',
     'name' => 'قلم رصاص',
-    'quantity' => 1,
-    'tax_exclusive_price' => 10,
+    'quantity' => 2,
+    'tax_exclusive_price' => 60,
     'VAT_percent' => 0.15,
-    'discounts' => [
-        ['amount' => 0, 'reason' => 'A discount'],
-    ],
+    'discount' =>
+    ['percentage' => 0.20, 'reason' => 'A discount'],
+
 ];
 $line_item2 = [
     'id' => '1',
     'name' => 'قلم رصاص',
     'quantity' => 1,
-    'tax_exclusive_price' => 20,
+    'tax_exclusive_price' => 30,
     'VAT_percent' => 0.15,
     'other_taxes' => [
         //['percent_amount' => 0.5]
     ],
-    'discounts' => [
-        ['amount' => 0, 'reason' => 'A discount'],
-    ],
+    'discount' =>
+    ['percentage' => 0.15, 'reason' => 'A discount'],
+
 ];
 $line_item3 = [
     'id' => '1',
@@ -53,9 +53,9 @@ $line_item3 = [
     'other_taxes' => [
         //['percent_amount' => 0.5]
     ],
-    'discounts' => [
-        ['amount' => 0, 'reason' => 'A discount'],
-    ],
+    'discount' =>
+    ['percentage' => 0.15, 'reason' => 'A discount'],
+
 ];
 
 $egs_unit = [
@@ -92,7 +92,10 @@ $invoice = [
     "delivery_date" => '2025-05-20',
     'previous_invoice_hash' => 'NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZiNTdlOQ==', // AdditionalDocumentReference/PIH
     'line_items' => [
-        $line_item,$line_item2,$line_item3
+        $line_item,
+        $line_item2,
+        $line_item3
+        // $line_item,
     ],
 ];
 
@@ -105,7 +108,7 @@ $binary_security_token = "-----BEGIN CERTIFICATE-----MIICPTCCAeOgAwIBAgIGAYzzgEh
 // list($request_id, $binary_security_token, $secret) = $egs->issueComplianceCertificate('272826', $csr);
 
 // build invoice
-list($invoice_string, $invoice_hash, $qr) = $egs-> buildInvoice01_388($invoice, $egs_unit, $binary_security_token, $private_key);
+list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice01_388($invoice, $egs_unit, $binary_security_token, $private_key);
 // $egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
 
 // list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_388($invoice, $egs_unit, $binary_security_token, $private_key);
@@ -131,9 +134,7 @@ list($invoice_string, $invoice_hash, $qr) = $egs-> buildInvoice01_388($invoice, 
 // print_r($egs->reportInvoice($invoice_string, $invoice_hash, $pro_binary_security_token, $pro_secret));
 
 // echo PHP_EOL;
- 
+
 $handle = fopen('invoicee.xml', 'w');
 fwrite($handle, $invoice_string);
 fclose($handle);
-
-printf($invoice_string);

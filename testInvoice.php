@@ -87,9 +87,9 @@ $egs_unit = [
 $invoice = [
     "uuid" => EGS::uuid(),
     'invoice_counter_number' => 23,
-    'invoice_serial_number' => 'SME00023',
     'issue_date' => '2025-05-19',
     'issue_time' => '12:21:28',
+    "delivery_date" => '2025-05-20',
     'previous_invoice_hash' => 'NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZiNTdlOQ==', // AdditionalDocumentReference/PIH
     'line_items' => [
         $line_item,$line_item2,$line_item3

@@ -2,10 +2,10 @@
 
 $tax_total = <<<XML
 <cac:TaxTotal>
-        <cbc:TaxAmount currencyID="SAR">__158.67</cbc:TaxAmount>__TaxSubtotal
-    </cac:TaxTotal>
-    <cac:TaxTotal>
         <cbc:TaxAmount currencyID="SAR">___tax_amount</cbc:TaxAmount>
+    </cac:TaxTotal>
+<cac:TaxTotal>
+        <cbc:TaxAmount currencyID="SAR">__158.67</cbc:TaxAmount>__TaxSubtotal
     </cac:TaxTotal>
 XML;
 

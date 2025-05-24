@@ -1,6 +1,6 @@
 <?php
 
-namespace ZATCA;
+namespace  ZATCA;
 
 use Exception;
 use Mode;
@@ -34,7 +34,6 @@ class API
             $certificate_stripped = $this->cleanUpCertificateString($certificate);
             $certificate_stripped = base64_encode($certificate_stripped);
             $basic = base64_encode($certificate_stripped . ':' . $secret);
-
             Logger::debug("Authorization: Basic $basic", [__CLASS__ . '::' . __FUNCTION__]);
 
             return [
@@ -84,7 +83,7 @@ class API
                 throw new Exception('Error issuing a compliance certificate.');
 
             $issued_certificate = base64_decode($response->binarySecurityToken);
-            $response->binarySecurityToken = "-----BEGIN CERTIFICATE-----\n{$issued_certificate}\n-----END CERTIFICATE-----";
+            $response->binarySecurityToken = $issued_certificate;
 
             return $response;
         };
@@ -109,8 +108,7 @@ class API
                 CURLOPT_CUSTOMREQUEST => 'POST',
                 CURLOPT_POSTFIELDS => json_encode([
                     'invoiceHash' => $invoice_hash,
-                    // TODO: find out what this is, is it egs_serial_number?
-                    'uuid' => $uuid, 
+                    'uuid' => $uuid,
                     'invoice' => base64_encode($signed_invoice_string),
                 ]),
                 CURLOPT_HTTPHEADER => [...$headers, ...$auth_headers],
@@ -124,8 +122,9 @@ class API
 
             $response = json_decode($response);
 
-            if ($http_code != 200)
+            if ($http_code != 200) {
                 throw new Exception('Error in compliance check.');
+            }
             return $response;
         };
 

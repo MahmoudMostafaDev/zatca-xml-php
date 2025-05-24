@@ -33,7 +33,7 @@ $line_item = [
 ];
 
 $egs_unit = [
-    'egs_serial_number' => THYAB_ORG_UUID, 
+    'egs_serial_number' => THYAB_ORG_UUID,
     'custom_id' => 'EGS1-886431145',
     'model' => 'IOS',
     'CRN_number' => 4031006635,
@@ -108,7 +108,7 @@ $invoice = [
 ];
 
 // this is the structure of the invoice down here
- 
+
 // $invoice = [
 //     'uuid' => THYAB_INVOICE_UUID,
 //     'invoice_counter_number' => 23, // universal unique invoice counter number

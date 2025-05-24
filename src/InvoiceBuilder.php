@@ -1,6 +1,6 @@
 <?php
 
-namespace ZATCA;
+namespace  ZATCA;
 
 require_once ROOT_PATH . '/src/helpers/utils.php';
 
@@ -582,7 +582,7 @@ class InvoiceBuilder
 
         // Calc total taxes
         // BR-KSA-DEC-02
-        $line_item_total_taxes = $line_item_total_taxes + ($line_item_subtotal * $line_item['VAT_percent']);
+        $line_item_total_taxes =  number_format($line_item_total_taxes + ($line_item_subtotal * $line_item['VAT_percent']), 2, ".", "");
 
         // BR-KSA-DEC-03, BR-KSA-51
         $cacTaxTotal = [
@@ -597,6 +597,7 @@ class InvoiceBuilder
         ];
 
         $price =  $line_item["tax_exclusive_price"] - ($line_item["tax_exclusive_price"] * $line_item['discount']['percentage']);
+
         return [
             $cacAllowanceCharges,
             $cacClassifiedTaxCategories,
@@ -668,16 +669,15 @@ class InvoiceBuilder
         };
 
 
-
         $taxes_total = 0;
         echo '' . $line_items . '';
         array_map(function ($line_item) use (&$addTaxSubtotal, &$taxes_total) {
             $total_line_item_discount = $line_item['discount']['percentage'] > 0 ? $line_item['discount']['percentage'] * $line_item['tax_exclusive_price'] * $line_item['quantity'] : 0;
             $taxable_amount = ($line_item['tax_exclusive_price'] * $line_item['quantity']) - ($total_line_item_discount ?? 0);
 
-            $tax_amount = ((float)$line_item['VAT_percent']) * ((float)$taxable_amount);
+            $tax_amount = number_format(((float)$line_item['VAT_percent']) * ((float)$taxable_amount), 2, '.', '');
             $addTaxSubtotal($taxable_amount, $tax_amount, $line_item['VAT_percent']);
-            $taxes_total += $tax_amount;
+            $taxes_total += number_format($tax_amount, 2, '.', '');
         }, $line_items);
 
         printf($sumTaxableS);

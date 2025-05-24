@@ -42,10 +42,8 @@
     "phpunit/phpunit": "^9.5"
   },
   "autoload": {
-    "psr-4": {
-      "SauMahmoudMostafaDevceX22\\ZatcaXmlPhp\\": [
-        "src"
-      ]
+        "psr-4": {
+            "ZATCA\\": "src/"
+        }
     }
-  }
 }

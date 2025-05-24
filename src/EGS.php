@@ -1,10 +1,13 @@
 <?php
 
-namespace ZATCA;
+namespace  ZATCA;
+
 
 use DOMDocument;
 use Exception;
 use Mode;
+use ZATCA\sign\Helpers\Certificate;
+use ZATCA\sign\InvoiceSigner;
 
 class EGS
 {
@@ -110,9 +113,11 @@ class EGS
 
     public static function uuid(): string
     {
-        return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+        return sprintf(
+            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
             // 32 bits for "time_low"
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
 
             // 16 bits for "time_mid"
             mt_rand(0, 0xffff),
@@ -127,7 +132,9 @@ class EGS
             mt_rand(0, 0x3fff) | 0x8000,
 
             // 48 bits for "node"
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff)
         );
     }
 
@@ -142,107 +149,108 @@ class EGS
         return [$issued_data->requestID, $issued_data->binarySecurityToken, $issued_data->secret];
     }
 
-    public function buildInvoice01_388(array $invoiceInfo, array $egs_unit, mixed $certificate, mixed $private_key)
+    public function buildInvoice01_388(array $invoiceInfo, array $egs_unit, mixed $certificate, mixed $private_key, string $secretKey)
     {
-        return $this->buildInvoice($invoiceInfo, $egs_unit, $certificate, $private_key, '01_388');
+        return $this->buildInvoice($invoiceInfo, $egs_unit, $certificate, $private_key, '01_388', $secretKey);
     }
 
-    public function buildInvoice02_388(array $invoiceInfo, array $egs_unit, mixed $certificate, mixed $private_key)
+    public function buildInvoice02_388(array $invoiceInfo, array $egs_unit, mixed $certificate, mixed $private_key, string $secretKey)
     {
-        return $this->buildInvoice($invoiceInfo, $egs_unit, $certificate, $private_key, '02_388');
+        return $this->buildInvoice($invoiceInfo, $egs_unit, $certificate, $private_key, '02_388', $secretKey);
     }
 
-    public function buildInvoice01_383(array $invoiceInfo, array $egs_unit, mixed $certificate, mixed $private_key)
+    public function buildInvoice01_383(array $invoiceInfo, array $egs_unit, mixed $certificate, mixed $private_key, string $secretKey)
     {
-        return $this->buildInvoice($invoiceInfo, $egs_unit, $certificate, $private_key, '01_383');
+        return $this->buildInvoice($invoiceInfo, $egs_unit, $certificate, $private_key, '01_383', $secretKey);
     }
 
-    public function buildInvoice02_383(array $invoiceInfo, array $egs_unit, mixed $certificate, mixed $private_key)
+    public function buildInvoice02_383(array $invoiceInfo, array $egs_unit, mixed $certificate, mixed $private_key, string $secretKey)
     {
-        return $this->buildInvoice($invoiceInfo, $egs_unit, $certificate, $private_key, '02_383');
+        return $this->buildInvoice($invoiceInfo, $egs_unit, $certificate, $private_key, '02_383', $secretKey);
     }
 
-    public function buildInvoice01_381(array $invoiceInfo, array $egs_unit, mixed $certificate, mixed $private_key)
+    public function buildInvoice01_381(array $invoiceInfo, array $egs_unit, mixed $certificate, mixed $private_key, string $secretKey)
     {
-        return $this->buildInvoice($invoiceInfo, $egs_unit, $certificate, $private_key, '01_381');
+        return $this->buildInvoice($invoiceInfo, $egs_unit, $certificate, $private_key, '01_381', $secretKey);
     }
 
-    public function buildInvoice02_381(array $invoiceInfo, array $egs_unit, mixed $certificate, mixed $private_key)
+    public function buildInvoice02_381(array $invoiceInfo, array $egs_unit, mixed $certificate, mixed $private_key, string $secretKey)
     {
-        return $this->buildInvoice($invoiceInfo, $egs_unit, $certificate, $private_key, '02_381');
+        return $this->buildInvoice($invoiceInfo, $egs_unit, $certificate, $private_key, '02_381', $secretKey);
     }
 
-    private function buildInvoice(array $invoiceInfo, array $egs_unit, string $certificate, string $private_key, string $invoiceCode): array
+    private function buildInvoice(array $invoiceInfo, array $egs_unit, string $certificate, string $private_key, string $invoiceCode, string $secretKey): array
     {
         $invoiceBuilder = new InvoiceBuilder();
 
         $invoice_xml = $invoiceBuilder->invoice($invoiceInfo, $egs_unit, $invoiceCode);
 
-        $invoice_hash = $invoiceBuilder->getInvoiceHash($invoice_xml);
+        $InvoicSigned = InvoiceSigner::signInvoice($invoice_xml->saveXML(), new Certificate($certificate, $private_key, $secretKey));
+        //         $invoice_hash = $invoiceBuilder->getInvoiceHash($invoice_xml);
 
-        list($hash, $issuer, $serialNumber, $public_key, $signature)
-            = $invoiceBuilder->getCertificateInfo($certificate);
+        //         list($hash, $issuer, $serialNumber, $public_key, $signature)
+        //             = $invoiceBuilder->getCertificateInfo($certificate);
 
-        $digital_signature = $invoiceBuilder->createInvoiceDigitalSignature($invoice_hash, $private_key);
+        //         $digital_signature = $invoiceBuilder->createInvoiceDigitalSignature($invoice_hash, $private_key);
 
-//        $qr = $invoiceBuilder->generateQR(
-//            $invoice_xml,
-//            $digital_signature,
-//            $public_key,
-//            $signature,
-//            $this->invoice_time,
-//            $invoice_hash
-//        );
+        // //        $qr = $invoiceBuilder->generateQR(
+        // //            $invoice_xml,
+        // //            $digital_signature,
+        // //            $public_key,
+        // //            $signature,
+        // //            $this->invoice_time,
+        // //            $invoice_hash
+        // //        );
 
-        $signed_properties_props = [
-            'sign_timestamp' => $this->invoice_time,
-            'certificate_hash' => $hash, // SignedSignatureProperties/SigningCertificate/CertDigest/<ds:DigestValue>SET_CERTIFICATE_HASH</ds:DigestValue>
-            'certificate_issuer' => $issuer,
-            'certificate_serial_number' => $serialNumber
-        ];
-        $ubl_signature_signed_properties_xml_string_for_signing = $invoiceBuilder->defaultUBLExtensionsSignedPropertiesForSigning($signed_properties_props);
-        $ubl_signature_signed_properties_xml_string = $invoiceBuilder->defaultUBLExtensionsSignedProperties($signed_properties_props);
+        //         $signed_properties_props = [
+        //             'sign_timestamp' => $this->invoice_time,
+        //             'certificate_hash' => $hash, // SignedSignatureProperties/SigningCertificate/CertDigest/<ds:DigestValue>SET_CERTIFICATE_HASH</ds:DigestValue>
+        //             'certificate_issuer' => $issuer,
+        //             'certificate_serial_number' => $serialNumber
+        //         ];
+        //         $ubl_signature_signed_properties_xml_string_for_signing = $invoiceBuilder->defaultUBLExtensionsSignedPropertiesForSigning($signed_properties_props);
+        //         $ubl_signature_signed_properties_xml_string = $invoiceBuilder->defaultUBLExtensionsSignedProperties($signed_properties_props);
 
-        $signed_properties_hash = base64_encode(openssl_digest($ubl_signature_signed_properties_xml_string_for_signing, 'sha256'));
+        //         $signed_properties_hash = base64_encode(openssl_digest($ubl_signature_signed_properties_xml_string_for_signing, 'sha256'));
 
-        // UBL Extensions
-        $ubl_signature_xml_string = $invoiceBuilder->defaultUBLExtensions(
-            $invoice_hash, // <ds:DigestValue>SET_INVOICE_HASH</ds:DigestValue>
-            $signed_properties_hash, // SignatureInformation/Signature/SignedInfo/Reference/<ds:DigestValue>SET_SIGNED_PROPERTIES_HASH</ds:DigestValue>
-            $digital_signature,
-            $certificate,
-            $ubl_signature_signed_properties_xml_string
-        );
+        //         // UBL Extensions
+        //         $ubl_signature_xml_string = $invoiceBuilder->defaultUBLExtensions(
+        //             $invoice_hash, // <ds:DigestValue>SET_INVOICE_HASH</ds:DigestValue>
+        //             $signed_properties_hash, // SignatureInformation/Signature/SignedInfo/Reference/<ds:DigestValue>SET_SIGNED_PROPERTIES_HASH</ds:DigestValue>
+        //             $digital_signature,
+        //             $certificate,
+        //             $ubl_signature_signed_properties_xml_string
+        //         );
 
-        // Set signing elements
-        $unsigned_invoice_str = $invoice_xml->saveXML();
+        //         // Set signing elements
+        //         $unsigned_invoice_str = $invoice_xml->saveXML();
 
-        $unsigned_invoice_str = str_replace('SET_UBL_EXTENSIONS_STRING', $ubl_signature_xml_string, $unsigned_invoice_str);
-        // $unsigned_invoice_str = str_replace('SET_QR_CODE_DATA', $qr, $unsigned_invoice_str);
+        //         $unsigned_invoice_str = str_replace('SET_UBL_EXTENSIONS_STRING', $ubl_signature_xml_string, $unsigned_invoice_str);
+        //         // $unsigned_invoice_str = str_replace('SET_QR_CODE_DATA', $qr, $unsigned_invoice_str);
 
-        $signed_invoice = new DOMDocument();
-        $signed_invoice->loadXML($unsigned_invoice_str);
+        //         $signed_invoice = new DOMDocument();
+        //         $signed_invoice->loadXML($unsigned_invoice_str);
 
-        $invoice_string = $signed_invoice->saveXML();
-        //$signed_invoice_string = $zatca_simplified_tax_invoice->signedPropertiesIndentationFix($signed_invoice_string);
+        //         $invoice_string = $signed_invoice->saveXML();
+        //         //$signed_invoice_string = $zatca_simplified_tax_invoice->signedPropertiesIndentationFix($signed_invoice_string);
 
-        $tmp_xml_path = ROOT_PATH . '/tmp/invoice.xml';
-        $invoice = fopen($tmp_xml_path, "w");
-        fwrite($invoice, $invoice_string);
-        fclose($invoice);
-        $qr = $invoiceBuilder->generateQR(
-            $invoice_xml,
-            $digital_signature,
-            $public_key,
-            $signature,
-            $this->invoice_time,
-            $invoice_hash
-        );
-        unlink($tmp_xml_path);
+        //         $tmp_xml_path = ROOT_PATH . '/tmp/invoice.xml';
+        //         $invoice = fopen($tmp_xml_path, "w");
+        //         fwrite($invoice, $invoice_string);
+        //         fclose($invoice);
+        //         $qr = $invoiceBuilder->generateQR(
+        //             $invoice_xml,
+        //             $digital_signature,
+        //             $public_key,
+        //             $signature,
+        //             $this->invoice_time,
+        //             $invoice_hash
+        //         );
+        //         unlink($tmp_xml_path);
 
-        $invoice_string = str_replace('SET_QR_CODE_DATA', $qr, $invoice_string);
+        //         $invoice_string = str_replace('SET_QR_CODE_DATA', $qr, $invoice_string);
 
-        return [$invoice_string, $invoice_hash, $qr];
+        return [$InvoicSigned->getInvoice(), $InvoicSigned->getHash(), $InvoicSigned->getQRCode()];
     }
 
     public function checkInvoiceCompliance(string $signed_invoice_string, string $invoice_hash, string $certificate, string $secret, $invoice): string
@@ -251,8 +259,7 @@ class EGS
             throw new Exception('EGS is missing a certificate/private key/api secret to check the invoice compliance.');
 
         list($issueCertificate, $checkInvoiceCompliance) = $this->api->compliance($certificate, $secret);
-        // TODO: find out what this is, is it egs_serial_number or what
-        $issued_data = $checkInvoiceCompliance($signed_invoice_string, $invoice_hash, $this->$invoice['uuid']);
+        $issued_data = $checkInvoiceCompliance($signed_invoice_string, $invoice_hash, $invoice['uuid']);
 
         return json_encode($issued_data);
     }
@@ -269,7 +276,7 @@ class EGS
 
     public function productionCSIDRenewal(string $csr, string $otp)
     {
-        if (!$csr)  
+        if (!$csr)
             throw new Exception('EGS is missing a certificate/private key/api secret to check the invoice compliance.');
 
         return $this->api->productionCSIDsRenew($csr, $otp);

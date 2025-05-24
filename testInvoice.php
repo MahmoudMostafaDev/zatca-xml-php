@@ -1,6 +1,7 @@
 <?php
 
 use ZATCA\EGS;
+use GuzzleHttp\Client;
 
 const ROOT_PATH = __DIR__;
 
@@ -12,7 +13,7 @@ enum Mode
 }
 
 const STORAGE_PATH = ROOT_PATH . '/storage';
-
+require_once __DIR__ . '/vendor/autoload.php';
 require ROOT_PATH . '/src/EGS.php';
 require ROOT_PATH . '/src/InvoiceBuilder.php';
 require ROOT_PATH . '/src/API.php';
@@ -87,9 +88,9 @@ $egs_unit = [
 $invoice = [
     "uuid" => EGS::uuid(),
     'invoice_counter_number' => 23,
-    'issue_date' => '2025-05-19',
-    'issue_time' => '12:21:28',
-    "delivery_date" => '2025-05-20',
+    'issue_date' => '2025-05-24',
+    'issue_time' => '01:21:28',
+    "delivery_date" => '2025-05-25',
     'previous_invoice_hash' => 'NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZiNTdlOQ==', // AdditionalDocumentReference/PIH
     'line_items' => [
         $line_item,
@@ -103,37 +104,37 @@ $egs = new EGS($egs_unit, Mode::Dev);
 
 // New Keys & CSR for the EGS
 list($private_key, $csr) = $egs->generateNewKeysAndCSR('Jabbar Nasser Al-Bishi Co. W.L.L');
-$binary_security_token = "-----BEGIN CERTIFICATE-----MIICPTCCAeOgAwIBAgIGAYzzgEhNMAoGCCqGSM49BAMCMBUxEzARBgNVBAMMCmVJbnZvaWNpbmcwHhcNMjQwMTEwMTMxMTU0WhcNMjkwMTA5MjEwMDAwWjB1MQswCQYDVQQGEwJTQTEWMBQGA1UECwwNUml5YWRoIEJyYW5jaDEmMCQGA1UECgwdTWF4aW11bSBTcGVlZCBUZWNoIFN1cHBseSBMVEQxJjAkBgNVBAMMHVRTVC04ODY0MzExNDUtMzk5OTk5OTk5OTAwMDAzMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEoWCKa0Sa9FIErTOv0uAkC1VIKXxU9nPpx2vlf4yhMejy8c02XJblDq7tPydo8mq0ahOMmNo8gwni7Xt1KT9UeKOBwTCBvjAMBgNVHRMBAf8EAjAAMIGtBgNVHREEgaUwgaKkgZ8wgZwxOzA5BgNVBAQMMjEtVFNUfDItVFNUfDMtZWQyMmYxZDgtZTZhMi0xMTE4LTliNTgtZDlhOGYxMWU0NDVmMR8wHQYKCZImiZPyLGQBAQwPMzk5OTk5OTk5OTAwMDAzMQ0wCwYDVQQMDAQxMTAwMREwDwYDVQQaDAhSUlJEMjkyOTEaMBgGA1UEDwwRU3VwcGx5IGFjdGl2aXRpZXMwCgYIKoZIzj0EAwIDSAAwRQIhAIF8jIcxzvCyqUDTp5Omv72UpxPALmoRyt9DY24jWmBQAiA0baZ6Yrpp5yJ4ahoooW3+Oa8kkb31evAoHdvgD8063w==-----END CERTIFICATE-----";
 // // Issue a new compliance cert for the EGS
-// list($request_id, $binary_security_token, $secret) = $egs->issueComplianceCertificate('272826', $csr);
-
+list($request_id, $binary_security_token, $secret) = $egs->issueComplianceCertificate('272826', $csr);
 // build invoice
-list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice01_388($invoice, $egs_unit, $binary_security_token, $private_key);
-// $egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_388($invoice, $egs_unit, $binary_security_token, $private_key, $secret);
+// $egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret, $invoice) . PHP_EOL;
 
-// list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_388($invoice, $egs_unit, $binary_security_token, $private_key);
-// $egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
-// invoice_write($invoice_string, 'invoice');
 
-// list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice01_381($invoice, $egs_unit, $binary_security_token, $private_key);
-// $egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+$client = new Client();
 
-// list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_381($invoice, $egs_unit, $binary_security_token, $private_key);
-// $egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
 
-// list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice01_383($invoice, $egs_unit, $binary_security_token, $private_key);
-// $egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+$response = $client->post('https://gw-fatoora.zatca.gov.sa/e-invoicing/developer-portal/compliance/invoices', [
+    "http_errors" => false,
+    'headers' => [
+        'accept'          => 'application/json',
+        'Accept-Language' => 'en',
+        'Accept-Version'  => 'V2',
+        'Authorization'   => 'Basic ' . base64_encode(base64_encode($binary_security_token) . ":" . $secret),
+        'Content-Type'    => 'application/json'
+    ],
+    'json' => [
+        'invoiceHash' => $invoice_hash,
+        'uuid' => $invoice['uuid'],
+        'invoice' => base64_encode($invoice_string)
+    ]
+]);
 
-// list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_383($invoice, $egs_unit, $binary_security_token, $private_key);
-// $egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+echo $response->getBody()->getContents();
 
-// // Issue production certificate
-// list($pro_request_id, $pro_binary_security_token, $pro_secret) = $egs->issueProductionCertificate($binary_security_token, $secret, $request_id);
-// // var_dump($egs->productionCSIDRenewal($csr, '123456'));
 
-// print_r($egs->reportInvoice($invoice_string, $invoice_hash, $pro_binary_security_token, $pro_secret));
 
-// echo PHP_EOL;
+
 
 $handle = fopen('invoicee.xml', 'w');
 fwrite($handle, $invoice_string);

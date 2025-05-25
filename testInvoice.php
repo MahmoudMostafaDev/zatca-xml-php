@@ -98,6 +98,13 @@ $invoice = [
         $line_item3
         // $line_item,
     ],
+    'billingReferences' => [
+        'id' => 'SME00098'
+    ],
+    'paymentMeans' => [
+        'code' => '42',
+        'note' => 'Returned items'
+    ],
 ];
 
 $egs = new EGS($egs_unit, Mode::Dev);

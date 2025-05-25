@@ -81,11 +81,7 @@ return /* XML */
     </cac:AccountingCustomerParty>
     <cac:Delivery>
 		<cbc:ActualDeliveryDate>__ActualDeliveryDate</cbc:ActualDeliveryDate>
-	</cac:Delivery>
-    <cac:PaymentMeans>
-        <cbc:PaymentMeansCode>10</cbc:PaymentMeansCode>
-        <cbc:InstructionNote>CANCELLATION_OR_TERMINATION</cbc:InstructionNote>
-    </cac:PaymentMeans>
+	</cac:Delivery>SET_PAYMENT_REFERENCE
     PARSE_LINE_ITEMS
 </Invoice>
 XML;

@@ -53,9 +53,11 @@ class InvoiceBuilder
 
         // if canceled (BR-KSA-56) set reference number to canceled invoice
         if ($invoiceCode === '01_381' || $invoiceCode === '02_381' || $invoiceCode === '01_383' || $invoiceCode === '02_383') {
-            $populated_template = str_replace('SET_BILLING_REFERENCE', $this->defaultBillingReference($egs_unit['cancelation']['canceled_invoice_number']), $populated_template);
+            $populated_template = str_replace('SET_BILLING_REFERENCE', $this->defaultBillingReference($invoice['billingReferences']['id']), $populated_template);
+            $populated_template = str_replace('SET_PAYMENT_REFERENCE', $this->paymentMeans($invoice['paymentMeans']['code'], $invoice['paymentMeans']['note']), $populated_template);
         } else {
             $populated_template = str_replace('SET_BILLING_REFERENCE', '', $populated_template);
+            $populated_template = str_replace('SET_PAYMENT_REFERENCE', "", $populated_template);
         }
 
         $populated_template = str_replace('SET_INVOICE_SERIAL_NUMBER', getFormattedOrderId($invoice["invoice_counter_number"], $invoice["issue_date"]), $populated_template);
@@ -91,8 +93,17 @@ class InvoiceBuilder
     private function defaultBillingReference(string $invoice_number): string
     {
         $populated_template = require ROOT_PATH . '/src/templates/invoice_billing_reference_template.php';
-        return str_replace('SET_INVOICE_NUMBER', $invoice_number, $populated_template);
+        return str_replace('SET_IRN_NUMBER', $invoice_number, $populated_template);
     }
+
+    private function paymentMeans(string $payment_method, $reason): string
+    {
+        $populated_template = require ROOT_PATH . '/src/templates/invoice_billing_payment_means.php';
+        $populated_template =  str_replace('SET_PAYMENT_METHOD', $payment_method, $populated_template);
+        $populated_template = str_replace('SET_REASON', $reason, $populated_template);
+        return $populated_template;
+    }
+
 
     public function getInvoiceHash(DOMDocument $invoice_xml): string
     {

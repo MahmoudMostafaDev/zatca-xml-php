@@ -79,8 +79,40 @@ class API
 
             $response = json_decode($response);
 
-            if ($http_code != 200)
-                throw new Exception('Error issuing a compliance certificate.');
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new Exception('Error decoding JSON response: ' . json_last_error_msg() . '. HTTP Code: ' . $http_code . '. Raw Body: ' . $response_body_string);
+            }
+            $decoded_response = $response;
+
+            if ($http_code != 200) {
+                $error_message_to_throw = 'Error issuing a compliance certificate. HTTP Code: ' . $http_code;
+                $error_details_log = [];
+                $error_objects = [];
+                if (isset($decoded_response->validationResults->errorMessages) && is_array($decoded_response->validationResults->errorMessages)) {
+                    $error_objects = $decoded_response->validationResults->errorMessages;
+                } elseif (isset($decoded_response->errorMessages) && is_array($decoded_response->errorMessages)) { // Check direct errorMessages
+                    $error_objects = $decoded_response->errorMessages;
+                }
+
+                if (!empty($error_objects)) {
+                    $error_message_to_throw .= ". API Errors: ";
+                    $parsed_errors = [];
+                    foreach ($error_objects as $error_obj) {
+                        $category = $error_obj->category ?? ($error_obj->type ?? 'N/A');
+                        $code = $error_obj->code ?? 'N/A';
+                        $message = $error_obj->message ?? 'No message provided';
+
+                        $parsed_errors[] = "Category: {$category}, Code: {$code}, Message: {$message}";
+                        $error_details_log[] = ['category' => $category, 'code' => $code, 'message' => $message];
+                    }
+                    $error_message_to_throw .= implode('; ', $parsed_errors);
+                    Logger::debug("Parsed API Errors from /compliance", $error_details_log);
+                } elseif (!empty($response_body_string)) {
+                    $error_message_to_throw .= '. Raw Response Body: ' . $response_body_string;
+                }
+
+                throw new Exception($error_message_to_throw);
+            }
 
             $issued_certificate = base64_decode($response->binarySecurityToken);
             $response->binarySecurityToken = $issued_certificate;

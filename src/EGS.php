@@ -5,7 +5,7 @@ namespace  ZATCA;
 
 use DOMDocument;
 use Exception;
-use Mode;
+use ZATCA\Mode;
 use ZATCA\sign\Helpers\Certificate;
 use ZATCA\sign\InvoiceSigner;
 

@@ -8,7 +8,7 @@ return <<<XML
 
     <cac:BillingReference>
         <cac:InvoiceDocumentReference>
-           <cbc:ID>Invoice Number: SET_INVOICE_NUMBER</cbc:ID>
+           <cbc:ID>SET_IRN_NUMBER</cbc:ID>
         </cac:InvoiceDocumentReference>
     </cac:BillingReference>
 XML;

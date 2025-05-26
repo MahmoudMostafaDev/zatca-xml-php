@@ -27,16 +27,13 @@ $line_item = [
     'quantity' => 1,
     'tax_exclusive_price' => 10,
     'VAT_percent' => 0.15,
-    'other_taxes' => [
-        //['percent_amount' => 0.5]
-    ],
-    'discounts' => [
+    'discounts' => [  // maybe take the discount amount from app and divide it by the total and apply percentage to the rest
         ['amount' => 0, 'reason' => 'A discount'],
     ],
 ];
 
 $egs_unit = [
-    'uuid' => EGS::uuid(),
+    'egs_serial_number' => THYAB_ORG_UUID,
     'custom_id' => 'EGS1-886431145',
     'model' => 'IOS',
     'CRN_number' => 4031006635,
@@ -70,9 +67,38 @@ $egs_unit = [
     ],
 ];
 
+
+// this is the structure of the egs down here
+
+// $egs_unit_Structure = [
+//     'egs_serial_number' => THYAB_ORG_UUID, // will be defined in the microservice
+//     'custom_id' => 'EGS1-886431145', // CSR common name 
+//     'model' => 'IOS', // CSR model
+//     'CRN_number' => 4031006635, // سجل التجاري from Application
+//     'VAT_name' => 'Jabbar Nasser Al-Bishi Co. W.L.L', // Organization.name from Application 
+//     'VAT_number' => 399999999900003, // 310048293400003 399999999900003 // Organization.vatId from Application
+//     'location' => [ // From application
+//         'city' => 'Khobar',
+//         'city_subdivision' => 'West',
+//         'street' => 'الامير سلطان | Prince Sultan',
+//         'plot_identification' => '0000',
+//         'building' => '2322',
+//         'postal_zone' => '23333',
+//     ],
+//     'branch_name' => 'My Branch Name', // Branch.name from Application
+//     'branch_industry' => 'Thobe Tailoring',  // Constant Thobe Tailoring
+//     'cancelation' => [ // FOR DEBIT/CREDIT Task
+//         'cancelation_type' => 'INVOICE',
+//         'canceled_invoice_number' => 'SME00002',
+//     ],
+//     'AccountingCustomerParty' => [
+//         '__registration_name' => 'Wesam Alzahir', // Customer.name from Application
+//     ],
+// ];
+
 $invoice = [
+    'uuid' => THYAB_INVOICE_UUID,
     'invoice_counter_number' => 23,
-    'invoice_serial_number' => 'SME00023',
     'issue_date' => '2022-09-07',
     'issue_time' => '12:21:28',
     'previous_invoice_hash' => 'NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZiNTdlOQ==', // AdditionalDocumentReference/PIH
@@ -80,6 +106,20 @@ $invoice = [
         $line_item,
     ],
 ];
+
+// this is the structure of the invoice down here
+
+// $invoice = [
+//     'uuid' => THYAB_INVOICE_UUID,
+//     'invoice_counter_number' => 23, // universal unique invoice counter number
+//     'issue_date' => '2022-09-07',
+//     'issue_time' => '12:21:28',
+//     "delivery_date" => '2022-09-07',
+//     'previous_invoice_hash', // from database 
+//     'line_items' => [
+//         $line_item,
+//     ],
+// ];
 
 $egs = new EGS($egs_unit, Mode::Dev);
 
@@ -91,23 +131,23 @@ list($request_id, $binary_security_token, $secret) = $egs->issueComplianceCertif
 
 // build invoice
 list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice01_388($invoice, $egs_unit, $binary_security_token, $private_key);
-$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $invoice["uuid"], $binary_security_token, $secret) . PHP_EOL;
 
 list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_388($invoice, $egs_unit, $binary_security_token, $private_key);
-$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $invoice["uuid"], $binary_security_token, $secret) . PHP_EOL;
 invoice_write($invoice_string, 'invoice');
 
 list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice01_381($invoice, $egs_unit, $binary_security_token, $private_key);
-$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $invoice["uuid"], $binary_security_token, $secret) . PHP_EOL;
 
 list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_381($invoice, $egs_unit, $binary_security_token, $private_key);
-$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $invoice["uuid"], $binary_security_token, $secret) . PHP_EOL;
 
 list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice01_383($invoice, $egs_unit, $binary_security_token, $private_key);
-$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $invoice["uuid"], $binary_security_token, $secret) . PHP_EOL;
 
 list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_383($invoice, $egs_unit, $binary_security_token, $private_key);
-$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $invoice["uuid"], $binary_security_token, $secret) . PHP_EOL;
 
 // Issue production certificate
 list($pro_request_id, $pro_binary_security_token, $pro_secret) = $egs->issueProductionCertificate($binary_security_token, $secret, $request_id);

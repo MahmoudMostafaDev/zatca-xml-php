@@ -74,26 +74,6 @@ return /* XML */
     </cac:AccountingSupplierParty>
     <cac:AccountingCustomerParty>
 		<cac:Party>
-				<cac:PartyIdentification>
-					<cbc:ID schemeID="CRN">__id</cbc:ID>
-				</cac:PartyIdentification>
-				<cac:PostalAddress>
-					<cbc:StreetName>__street_name</cbc:StreetName>
-					<cbc:BuildingNumber>__building_number</cbc:BuildingNumber>
-					<cbc:PlotIdentification>__plotIdentification</cbc:PlotIdentification>
-					<cbc:CitySubdivisionName>__city_subdivision_name</cbc:CitySubdivisionName>
-					<cbc:CityName>__city_name</cbc:CityName>
-					<cbc:PostalZone>__postal_zone</cbc:PostalZone>
-					<cac:Country>
-						<cbc:IdentificationCode>SA</cbc:IdentificationCode>
-					</cac:Country>
-				</cac:PostalAddress>
-				<cac:PartyTaxScheme>
-					<cbc:CompanyID>__company_id</cbc:CompanyID>
-					<cac:TaxScheme>
-						<cbc:ID>__tax_scheme_id</cbc:ID>
-					</cac:TaxScheme>
-				</cac:PartyTaxScheme>
 				<cac:PartyLegalEntity>
 					<cbc:RegistrationName>__registration_name</cbc:RegistrationName>
 				</cac:PartyLegalEntity>
@@ -101,11 +81,7 @@ return /* XML */
     </cac:AccountingCustomerParty>
     <cac:Delivery>
 		<cbc:ActualDeliveryDate>__ActualDeliveryDate</cbc:ActualDeliveryDate>
-	</cac:Delivery>
-    <cac:PaymentMeans>
-        <cbc:PaymentMeansCode>10</cbc:PaymentMeansCode>
-        <cbc:InstructionNote>CANCELLATION_OR_TERMINATION</cbc:InstructionNote>
-    </cac:PaymentMeans>
+	</cac:Delivery>SET_PAYMENT_REFERENCE
     PARSE_LINE_ITEMS
 </Invoice>
 XML;

@@ -1,6 +1,7 @@
 <?php
 
 use ZATCA\EGS;
+use GuzzleHttp\Client;
 
 const ROOT_PATH = __DIR__;
 
@@ -12,7 +13,7 @@ enum Mode
 }
 
 const STORAGE_PATH = ROOT_PATH . '/storage';
-
+require_once __DIR__ . '/vendor/autoload.php';
 require ROOT_PATH . '/src/EGS.php';
 require ROOT_PATH . '/src/InvoiceBuilder.php';
 require ROOT_PATH . '/src/API.php';
@@ -24,25 +25,48 @@ load_helpers('qr', 'invoice');
 $line_item = [
     'id' => '1',
     'name' => 'قلم رصاص',
+    'quantity' => 2,
+    'tax_exclusive_price' => 60,
+    'VAT_percent' => 0.15,
+    'discount' =>
+    ['percentage' => 0.20, 'reason' => 'A discount'],
+
+];
+$line_item2 = [
+    'id' => '1',
+    'name' => 'قلم رصاص',
     'quantity' => 1,
-    'tax_exclusive_price' => 10,
+    'tax_exclusive_price' => 30,
     'VAT_percent' => 0.15,
     'other_taxes' => [
         //['percent_amount' => 0.5]
     ],
-    'discounts' => [
-        ['amount' => 0, 'reason' => 'A discount'],
+    'discount' =>
+    ['percentage' => 0.15, 'reason' => 'A discount'],
+
+];
+$line_item3 = [
+    'id' => '1',
+    'name' => 'قلم رصاص',
+    'quantity' => 1,
+    'tax_exclusive_price' => 30,
+    'VAT_percent' => 0.15,
+    'other_taxes' => [
+        //['percent_amount' => 0.5]
     ],
+    'discount' =>
+    ['percentage' => 0.15, 'reason' => 'A discount'],
+
 ];
 
 $egs_unit = [
-    'uuid' => EGS::uuid(),
-    'custom_id' => 'EGS1-886431145',
-    'model' => 'IOS',
-    'CRN_number' => 4031006635,
-    'VAT_name' => 'Jabbar Nasser Al-Bishi Co. W.L.L',
-    'VAT_number' => 399999999900003, // 310048293400003 399999999900003
-    'location' => [
+    'egs_serial_number' => EGS::uuid(), // will be defined in the microservice
+    'custom_id' => 'EGS1-886431145', // CSR common name 
+    'model' => 'IOS', // CSR model
+    'CRN_number' => 4031006635, // سجل التجاري from Application
+    'VAT_name' => 'Jabbar Nasser Al-Bishi Co. W.L.L', // Organization.name from Application 
+    'VAT_number' => 399999999900003, // 310048293400003 399999999900003 // Organization.vatId from Application
+    'location' => [ // From application
         'city' => 'Khobar',
         'city_subdivision' => 'West',
         'street' => 'الامير سلطان | Prince Sultan',
@@ -50,34 +74,36 @@ $egs_unit = [
         'building' => '2322',
         'postal_zone' => '23333',
     ],
-    'branch_name' => 'My Branch Name',
-    'branch_industry' => 'Food',
-    'cancelation' => [
+    'branch_name' => 'My Branch Name', // Branch.name from Application
+    'branch_industry' => 'Thobe Tailoring',  // Constant Thobe Tailoring
+    'cancelation' => [ // FOR DEBIT/CREDIT Task
         'cancelation_type' => 'INVOICE',
         'canceled_invoice_number' => 'SME00002',
     ],
     'AccountingCustomerParty' => [
-        '__id' => 1010010000,
-        '__street_name' => 'الامير سلطان | Prince Sultan',
-        '__building_number' => '2322',
-        '__plotIdentification' => '0000',
-        '__city_subdivision_name' => 'West',
-        '__city_name' => 'Khobar',
-        '__postal_zone' => '23333',
-        '__company_id' => 301121965500003,
-        '__tax_scheme_id' => 'VAT',
-        '__registration_name' => 'Wesam Alzahir',
+        '__registration_name' => 'Wesam Alzahir', // Customer.name from Application
     ],
 ];
 
 $invoice = [
+    "uuid" => EGS::uuid(),
     'invoice_counter_number' => 23,
-    'invoice_serial_number' => 'SME00023',
-    'issue_date' => '2022-09-07',
-    'issue_time' => '12:21:28',
+    'issue_date' => '2025-05-24',
+    'issue_time' => '01:21:28',
+    "delivery_date" => '2025-05-25',
     'previous_invoice_hash' => 'NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZiNTdlOQ==', // AdditionalDocumentReference/PIH
     'line_items' => [
         $line_item,
+        $line_item2,
+        $line_item3
+        // $line_item,
+    ],
+    'billingReferences' => [
+        'id' => 'SME00098'
+    ],
+    'paymentMeans' => [
+        'code' => '42',
+        'note' => 'Returned items'
     ],
 ];
 
@@ -85,40 +111,44 @@ $egs = new EGS($egs_unit, Mode::Dev);
 
 // New Keys & CSR for the EGS
 list($private_key, $csr) = $egs->generateNewKeysAndCSR('Jabbar Nasser Al-Bishi Co. W.L.L');
-$binary_security_token = "-----BEGIN CERTIFICATE-----MIICPTCCAeOgAwIBAgIGAYzzgEhNMAoGCCqGSM49BAMCMBUxEzARBgNVBAMMCmVJbnZvaWNpbmcwHhcNMjQwMTEwMTMxMTU0WhcNMjkwMTA5MjEwMDAwWjB1MQswCQYDVQQGEwJTQTEWMBQGA1UECwwNUml5YWRoIEJyYW5jaDEmMCQGA1UECgwdTWF4aW11bSBTcGVlZCBUZWNoIFN1cHBseSBMVEQxJjAkBgNVBAMMHVRTVC04ODY0MzExNDUtMzk5OTk5OTk5OTAwMDAzMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEoWCKa0Sa9FIErTOv0uAkC1VIKXxU9nPpx2vlf4yhMejy8c02XJblDq7tPydo8mq0ahOMmNo8gwni7Xt1KT9UeKOBwTCBvjAMBgNVHRMBAf8EAjAAMIGtBgNVHREEgaUwgaKkgZ8wgZwxOzA5BgNVBAQMMjEtVFNUfDItVFNUfDMtZWQyMmYxZDgtZTZhMi0xMTE4LTliNTgtZDlhOGYxMWU0NDVmMR8wHQYKCZImiZPyLGQBAQwPMzk5OTk5OTk5OTAwMDAzMQ0wCwYDVQQMDAQxMTAwMREwDwYDVQQaDAhSUlJEMjkyOTEaMBgGA1UEDwwRU3VwcGx5IGFjdGl2aXRpZXMwCgYIKoZIzj0EAwIDSAAwRQIhAIF8jIcxzvCyqUDTp5Omv72UpxPALmoRyt9DY24jWmBQAiA0baZ6Yrpp5yJ4ahoooW3+Oa8kkb31evAoHdvgD8063w==-----END CERTIFICATE-----";
 // // Issue a new compliance cert for the EGS
-// list($request_id, $binary_security_token, $secret) = $egs->issueComplianceCertificate('272826', $csr);
-
+list($request_id, $binary_security_token, $secret) = $egs->issueComplianceCertificate('272826', $csr);
 // build invoice
-list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice01_388($invoice, $egs_unit, $binary_security_token, $private_key);
-// $egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
 
-// list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_388($invoice, $egs_unit, $binary_security_token, $private_key);
-// $egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
-// invoice_write($invoice_string, 'invoice');
+list($request_id2, $binary_security_token2, $secret2) = $egs->issueProductionCertificate($binary_security_token, $secret, $request_id);
 
-// list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice01_381($invoice, $egs_unit, $binary_security_token, $private_key);
-// $egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
 
-// list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_381($invoice, $egs_unit, $binary_security_token, $private_key);
-// $egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
+list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_388($invoice, $egs_unit, $binary_security_token, $private_key, $secret);
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret, $invoice["uuid"]) . PHP_EOL;
 
-// list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice01_383($invoice, $egs_unit, $binary_security_token, $private_key);
-// $egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
 
-// list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_383($invoice, $egs_unit, $binary_security_token, $private_key);
-// $egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret) . PHP_EOL;
 
-// // Issue production certificate
-// list($pro_request_id, $pro_binary_security_token, $pro_secret) = $egs->issueProductionCertificate($binary_security_token, $secret, $request_id);
-// // var_dump($egs->productionCSIDRenewal($csr, '123456'));
 
-// print_r($egs->reportInvoice($invoice_string, $invoice_hash, $pro_binary_security_token, $pro_secret));
 
-// echo PHP_EOL;
- 
-$handle = fopen('invoice.xml', 'w');
+// $res = $egs->reportInvoice(invoice_string: $invoice_string, $invoice_hash, $invoice["uuid"], $binary_security_token, $secret);
+
+
+
+$client = new Client();
+
+$response = $client->post('https://gw-fatoora.zatca.gov.sa/e-invoicing/developer-portal/invoices/reporting/single', [
+    "http_errors" => false,
+    'headers' => [
+        'accept'          => 'application/json',
+        'Accept-Language' => 'en',
+        'Accept-Version'  => 'V2',
+        'Authorization'   => 'Basic ' . base64_encode(base64_encode($binary_security_token) . ":" . $secret),
+        'Content-Type'    => 'application/json'
+    ],
+    'json' => [
+        'invoiceHash' => $invoice_hash,
+        'uuid' => $invoice['uuid'],
+        'invoice' => base64_encode($invoice_string)
+    ]
+]);
+
+
+
+$handle = fopen('invoicee.xml', 'w');
 fwrite($handle, $invoice_string);
 fclose($handle);
-
-printf($invoice_string);

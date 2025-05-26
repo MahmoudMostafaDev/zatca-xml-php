@@ -1,6 +1,6 @@
 <?php
 
-namespace ZATCA;
+namespace  ZATCA;
 
 use Exception;
 
@@ -316,16 +316,12 @@ class Logger
      * The Singleton's constructor should always be private to prevent direct
      * construction calls with the `new` operator.
      */
-    protected function __construct()
-    {
-    }
+    protected function __construct() {}
 
     /**
      * Singletons should not be cloneable.
      */
-    protected function __clone()
-    {
-    }
+    protected function __clone() {}
 
     /**
      * Singletons should not be restorable from strings.
@@ -347,7 +343,5 @@ class Logger
      * The Singleton's constructor should always be private to prevent direct
      * construction calls with the `new` operator.
      */
-    private function __destruct()
-    {
-    }
+    private function __destruct() {}
 }

@@ -2,6 +2,7 @@
 
 namespace  ZATCA;
 
+use GuzzleHttp\Client;
 use Exception;
 use Mode;
 use stdClass;
@@ -79,8 +80,40 @@ class API
 
             $response = json_decode($response);
 
-            if ($http_code != 200)
-                throw new Exception('Error issuing a compliance certificate.');
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new Exception('Error decoding JSON response: ' . json_last_error_msg() . '. HTTP Code: ' . $http_code);
+            }
+            $decoded_response = $response;
+
+            if ($http_code != 200) {
+                $error_message_to_throw = 'Error issuing a compliance certificate. HTTP Code: ' . $http_code;
+                $error_details_log = [];
+                $error_objects = [];
+                if (isset($decoded_response->validationResults->errorMessages) && is_array($decoded_response->validationResults->errorMessages)) {
+                    $error_objects = $decoded_response->validationResults->errorMessages;
+                } elseif (isset($decoded_response->errorMessages) && is_array($decoded_response->errorMessages)) { // Check direct errorMessages
+                    $error_objects = $decoded_response->errorMessages;
+                }
+
+                if (!empty($error_objects)) {
+                    $error_message_to_throw .= ". API Errors: ";
+                    $parsed_errors = [];
+                    foreach ($error_objects as $error_obj) {
+                        $category = $error_obj->category ?? ($error_obj->type ?? 'N/A');
+                        $code = $error_obj->code ?? 'N/A';
+                        $message = $error_obj->message ?? 'No message provided';
+
+                        $parsed_errors[] = "Category: {$category}, Code: {$code}, Message: {$message}";
+                        $error_details_log[] = ['category' => $category, 'code' => $code, 'message' => $message];
+                    }
+                    $error_message_to_throw .= implode('; ', $parsed_errors);
+                    Logger::debug("Parsed API Errors from /compliance", $error_details_log);
+                } elseif (!empty($response_body_string)) {
+                    $error_message_to_throw .= '. Raw Response Body: ' . $response_body_string;
+                }
+
+                throw new Exception($error_message_to_throw);
+            }
 
             $issued_certificate = base64_decode($response->binarySecurityToken);
             $response->binarySecurityToken = $issued_certificate;
@@ -88,41 +121,34 @@ class API
             return $response;
         };
 
-        $checkInvoiceCompliance = function (string $signed_invoice_string, string $invoice_hash, string $uuid) use ($auth_headers): stdClass {
+        $checkInvoiceCompliance = function (string $signed_invoice_string, string $invoice_hash, string $uuid, string $certificate, string $secret): stdClass {
 
-            $headers = [
-                'Accept-Version: ' . $this->version,
-                'Accept-Language: en',
-                'Content-Type: application/json',
-            ];
+            $client = new Client();
 
-            $curl = curl_init($this->sandbox_url . '/compliance/invoices');
-
-            curl_setopt_array($curl, array(
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_ENCODING => '',
-                CURLOPT_MAXREDIRS => 10,
-                CURLOPT_TIMEOUT => 0,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                CURLOPT_CUSTOMREQUEST => 'POST',
-                CURLOPT_POSTFIELDS => json_encode([
+            $response = $client->post($this->sandbox_url . '/compliance/invoices', [
+                "http_errors" => false,
+                'headers' => [
+                    'accept'          => 'application/json',
+                    'Accept-Language' => 'en',
+                    'Accept-Version'  => $this->version,
+                    'Authorization'   => 'Basic ' . base64_encode(base64_encode($certificate) . ":" . $secret),
+                    'Content-Type'    => 'application/json'
+                ],
+                'json' => [
                     'invoiceHash' => $invoice_hash,
                     'uuid' => $uuid,
-                    'invoice' => base64_encode($signed_invoice_string),
-                ]),
-                CURLOPT_HTTPHEADER => [...$headers, ...$auth_headers],
-            ));
+                    'invoice' => base64_encode($signed_invoice_string)
+                ]
+            ]);
 
-            $response = curl_exec($curl);
-            $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-            curl_close($curl);
+            $http_code = $response->getStatusCode() . '';
+            $response_string = $response->getBody()->getContents();
+            Logger::debug($response_string, ["http_code: {$http_code} /compliance/invoices"]);
 
-            Logger::debug($response, ["http_code: {$http_code} /compliance/invoices"]);
+            $response = json_decode($response_string);
 
-            $response = json_decode($response);
-
-            if ($http_code != 200) {
+            if ($http_code != 200 && $http_code != 202 && $http_code != 201) {
+                echo "\n " . $response_string . "\n";
                 throw new Exception('Error in compliance check.');
             }
             return $response;
@@ -178,8 +204,41 @@ class API
 
         $response = json_decode($response);
 
-        if ($http_code != 200)
-            throw new Exception('Error in /production/csids.');
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception('Error decoding JSON response: ' . json_last_error_msg() . '. HTTP Code: ' . $http_code);
+        }
+        $decoded_response = $response;
+
+        if ($http_code != 200) {
+            $error_message_to_throw = 'Error issuing a CSIDs Production . HTTP Code: ' . $http_code;
+            $error_details_log = [];
+            $error_objects = [];
+            if (isset($decoded_response->validationResults->errorMessages) && is_array($decoded_response->validationResults->errorMessages)) {
+                $error_objects = $decoded_response->validationResults->errorMessages;
+            } elseif (isset($decoded_response->errorMessages) && is_array($decoded_response->errorMessages)) {
+                $error_objects = $decoded_response->errorMessages;
+            }
+
+            if (!empty($error_objects)) {
+                $error_message_to_throw .= ". API Errors: ";
+                $parsed_errors = [];
+                foreach ($error_objects as $error_obj) {
+                    //here 
+                    $category = $error_obj->category ?? ($error_obj->type ?? 'N/A');
+                    $code = $error_obj->code ?? 'N/A';
+                    $message = $error_obj->message ?? 'No message provided';
+
+                    $parsed_errors[] = "Category: {$category}, Code: {$code}, Message: {$message}";
+                    $error_details_log[] = ['category' => $category, 'code' => $code, 'message' => $message];
+                }
+                $error_message_to_throw .= implode('; ', $parsed_errors);
+                Logger::debug("Parsed API Errors from /production/csids ", $error_details_log);
+            } elseif (!empty($response_body_string)) {
+                $error_message_to_throw .= '. Raw Response Body: ' . $response_body_string;
+            }
+
+            throw new Exception($error_message_to_throw);
+        }
 
         $issued_certificate = base64_decode($response->binarySecurityToken);
         $response->binarySecurityToken = "-----BEGIN CERTIFICATE-----\n{$issued_certificate}\n-----END CERTIFICATE-----";
@@ -226,43 +285,36 @@ class API
         return $response;
     }
 
-    public function reporting(string $invoice_body, string $pro_certificate, string $pro_secret, int $clearance_status = 0)
+    public function reporting(string $invoiceHash, string $uuid, string $invoice, string $pro_certificate, string $pro_secret, int $clearance_status = 0)
     {
-        $headers = [
-            'Accept-Version: ' . $this->version,
-            'accept-language: en',
-            "Clearance-Status: {$clearance_status}",
-            'Content-Type: application/json',
-        ];
 
-        $auth_headers = $this->getAuthHeaders($pro_certificate, $pro_secret);
+        $client = new Client();
 
-        $curl = curl_init($this->sandbox_url . '/invoices/reporting/single');
-
-        curl_setopt_array($curl, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => $invoice_body,
-            CURLOPT_HTTPHEADER => [...$headers, ...$auth_headers],
+        $response = $client->post($this->sandbox_url . '/invoices/reporting/single', [
+            'http_errors' => false,
+            'headers' => [
+                'accept'           => 'application/json',
+                'accept-language'  => 'en',
+                'Clearance-Status' => $clearance_status,
+                'Accept-Version'   => $this->version,
+                'Authorization'    => 'Basic ' . base64_encode(base64_encode($pro_certificate) . ":" . $pro_secret),
+                'Content-Type'     => 'application/json'
+            ],
+            'json' => [
+                'invoiceHash' => $invoiceHash,
+                'uuid' => $uuid,
+                'invoice' => $invoice
+            ]
         ]);
 
-        $response = curl_exec($curl);
-
-        $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        curl_close($curl);
-
-        Logger::debug($response, ["http_code: {$http_code} /invoices/reporting/single"]);
-
-        $response = json_decode($response);
-
-        if ($http_code != 200)
+        $http_code = $response->getStatusCode();
+        Logger::debug($response->getBody()->getContents(), ["http_code: {$http_code} /invoices/reporting/single"]);
+        if ($http_code != 200 && $http_code != 202 && $http_code != 201) {
+            echo $response->getBody()->getContents();
             throw new Exception('Error in /invoices/reporting/single.');
+        }
 
+        $response = json_decode($response->getBody());
         return $response;
     }
 }

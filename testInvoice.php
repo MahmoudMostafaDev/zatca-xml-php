@@ -114,14 +114,24 @@ list($private_key, $csr) = $egs->generateNewKeysAndCSR('Jabbar Nasser Al-Bishi C
 // // Issue a new compliance cert for the EGS
 list($request_id, $binary_security_token, $secret) = $egs->issueComplianceCertificate('272826', $csr);
 // build invoice
+
+list($request_id2, $binary_security_token2, $secret2) = $egs->issueProductionCertificate($binary_security_token, $secret, $request_id);
+
+
 list($invoice_string, $invoice_hash, $qr) = $egs->buildInvoice02_388($invoice, $egs_unit, $binary_security_token, $private_key, $secret);
-// $egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret, $invoice) . PHP_EOL;
+$egs->checkInvoiceCompliance($invoice_string, $invoice_hash, $binary_security_token, $secret, $invoice["uuid"]) . PHP_EOL;
+
+
+
+
+
+// $res = $egs->reportInvoice(invoice_string: $invoice_string, $invoice_hash, $invoice["uuid"], $binary_security_token, $secret);
+
 
 
 $client = new Client();
 
-
-$response = $client->post('https://gw-fatoora.zatca.gov.sa/e-invoicing/developer-portal/compliance/invoices', [
+$response = $client->post('https://gw-fatoora.zatca.gov.sa/e-invoicing/developer-portal/invoices/reporting/single', [
     "http_errors" => false,
     'headers' => [
         'accept'          => 'application/json',
@@ -136,10 +146,6 @@ $response = $client->post('https://gw-fatoora.zatca.gov.sa/e-invoicing/developer
         'invoice' => base64_encode($invoice_string)
     ]
 ]);
-
-echo $response->getBody()->getContents();
-
-
 
 
 

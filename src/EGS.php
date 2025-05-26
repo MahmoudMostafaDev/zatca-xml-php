@@ -253,13 +253,13 @@ class EGS
         return [$InvoicSigned->getInvoice(), $InvoicSigned->getHash(), $InvoicSigned->getQRCode()];
     }
 
-    public function checkInvoiceCompliance(string $signed_invoice_string, string $invoice_hash, string $certificate, string $secret, $invoice): string
+    public function checkInvoiceCompliance(string $signed_invoice_string, string $invoice_hash, string $certificate, string $secret, $invoice_uuid): string
     {
         if (!$certificate || !$secret)
             throw new Exception('EGS is missing a certificate/private key/api secret to check the invoice compliance.');
 
-        list($issueCertificate, $checkInvoiceCompliance) = $this->api->compliance($certificate, $secret);
-        $issued_data = $checkInvoiceCompliance($signed_invoice_string, $invoice_hash, $invoice['uuid']);
+        list($issueCertificate, $checkInvoiceCompliance) = $this->api->compliance();
+        $issued_data = $checkInvoiceCompliance($signed_invoice_string, $invoice_hash, $invoice_uuid,  $certificate,  $secret);
 
         return json_encode($issued_data);
     }
@@ -282,16 +282,25 @@ class EGS
         return $this->api->productionCSIDsRenew($csr, $otp);
     }
 
-    public function reportInvoice(string $invoice, string $invoice_hash, string $pro_certificate, string $pro_secret)
+    // public function reportInvoice(string $invoice, string $invoice_hash, string $pro_certificate, string $pro_secret)
+    // {
+    //     if (!$invoice_hash || !$invoice)
+    //         throw new Exception('invoice hash or invoice not null');
+
+    //     shell_exec("fatoora -sign -qr -invoice storage/invoice.xml -signedinvoice storage/invoice_signed.xml");
+    //     shell_exec("fatoora -invoice storage/invoice_signed.xml -invoiceRequest -apiRequest storage/invoice_signed.json");
+
+    //     $invoice_body = file_get_contents('storage/invoice_signed.json');
+
+    //     return $this->api->reporting($invoice_body, $pro_certificate, $pro_secret, 1);
+    // }
+
+    public function reportInvoice(string $invoice_string, $invoice_hash, $invoice_uuid, string $pro_certificate, string $pro_secret)
     {
-        if (!$invoice_hash || !$invoice)
-            throw new Exception('invoice hash or invoice not null');
+        if (!$invoice_string || !$invoice_hash || !$invoice_uuid)
+            throw new Exception('invoice hash or invoice or invoice uuid should not be null');
 
-        shell_exec("fatoora -sign -qr -invoice storage/invoice.xml -signedinvoice storage/invoice_signed.xml");
-        shell_exec("fatoora -invoice storage/invoice_signed.xml -invoiceRequest -apiRequest storage/invoice_signed.json");
 
-        $invoice_body = file_get_contents('storage/invoice_signed.json');
-
-        return $this->api->reporting($invoice_body, $pro_certificate, $pro_secret, 1);
+        return $this->api->reporting($invoice_hash, $invoice_uuid, base64_encode($invoice_string),  $pro_certificate, $pro_secret, 1);
     }
 }

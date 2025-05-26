@@ -56,12 +56,12 @@ class EGS
         if (!$private_key)
             throw new Exception('EGS has no private key');
 
-        if (!is_dir(ROOT_PATH . '/tmp/')) {
-            mkdir(ROOT_PATH . '/tmp/', 0775);
+        if (!is_dir('/tmp/')) {
+            mkdir('/tmp/', 0775);
         }
 
-        $private_key_file_name = ROOT_PATH . '/tmp/' . self::uuid() . '.pem';
-        $csr_config_file_name = ROOT_PATH . '/tmp/' . self::uuid() . '.cnf';
+        $private_key_file_name =  '/tmp/' . self::uuid() . '.pem';
+        $csr_config_file_name =  '/tmp/' . self::uuid() . '.cnf';
 
         $private_key_file = fopen($private_key_file_name, 'w');
         $csr_config_file = fopen($csr_config_file_name, 'w');
@@ -96,7 +96,7 @@ class EGS
             'production' => $this->production
         ];
 
-        $template_csr = require ROOT_PATH . '/src/templates/csr_template.php';
+        $template_csr = require  '/templates/csr_template.php';
 
         $template_csr = str_replace('SET_PRIVATE_KEY_PASS', ($config['private_key_pass'] ?? 'SET_PRIVATE_KEY_PASS'), $template_csr);
         $template_csr = str_replace('SET_PRODUCTION_VALUE', ($config['production'] ? 'ZATCA-Code-Signing' : 'TSTZATCA-Code-Signing'), $template_csr);

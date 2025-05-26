@@ -2,7 +2,7 @@
 
 namespace  ZATCA;
 
-require_once ROOT_PATH . '/src/helpers/utils.php';
+require_once  'helpers/utils.php';
 
 use DOMDocument;
 use SebastianBergmann\CodeCoverage\Util\Percentage;
@@ -46,7 +46,7 @@ class InvoiceBuilder
 
     public function invoice(array $invoice, array $egs_unit, string $invoiceCode)
     {
-        $populated_template = require ROOT_PATH . '/src/templates/simplified_tax_invoice_template.php';
+        $populated_template = require 'templates/simplified_tax_invoice_template.php';
 
         $populated_template = str_replace('SET_INVOICE_TYPE', $this->invoiceTypes[$invoiceCode][1], trim($populated_template));
         $populated_template = str_replace('__invoice_type_code_attr_name', $this->invoiceTypes[$invoiceCode][0], $populated_template);
@@ -92,13 +92,13 @@ class InvoiceBuilder
 
     private function defaultBillingReference(string $invoice_number): string
     {
-        $populated_template = require ROOT_PATH . '/src/templates/invoice_billing_reference_template.php';
+        $populated_template = require  'templates/invoice_billing_reference_template.php';
         return str_replace('SET_IRN_NUMBER', $invoice_number, $populated_template);
     }
 
     private function paymentMeans(string $payment_method, $reason): string
     {
-        $populated_template = require ROOT_PATH . '/src/templates/invoice_billing_payment_means.php';
+        $populated_template = require  'templates/invoice_billing_payment_means.php';
         $populated_template =  str_replace('SET_PAYMENT_METHOD', $payment_method, $populated_template);
         $populated_template = str_replace('SET_REASON', $reason, $populated_template);
         return $populated_template;
@@ -307,7 +307,7 @@ class InvoiceBuilder
 
     public function defaultUBLExtensionsSignedPropertiesForSigning(array $signed_properties_props): string
     {
-        $populated_template = require ROOT_PATH . '/src/templates/ubl_signature_signed_properties_for_signing_template.php';
+        $populated_template = require  'templates/ubl_signature_signed_properties_for_signing_template.php';
 
         $populated_template = str_replace('SET_SIGN_TIMESTAMP', $signed_properties_props['sign_timestamp'], $populated_template);
         $populated_template = str_replace('SET_CERTIFICATE_HASH', $signed_properties_props['certificate_hash'], $populated_template);
@@ -319,7 +319,7 @@ class InvoiceBuilder
 
     public function defaultUBLExtensionsSignedProperties(array $signed_properties_props): string
     {
-        $populated_template = require ROOT_PATH . '/src/templates/ubl_signature_signed_properties_template.php';
+        $populated_template = require  'templates/ubl_signature_signed_properties_template.php';
 
         $populated_template = str_replace('SET_SIGN_TIMESTAMP', $signed_properties_props['sign_timestamp'], $populated_template);
         $populated_template = str_replace('SET_CERTIFICATE_HASH', $signed_properties_props['certificate_hash'], $populated_template);
@@ -333,7 +333,7 @@ class InvoiceBuilder
     {
         $cleanUpCertificateString = $this->cleanUpCertificateString($cleanUpCertificateString);
 
-        $populated_template = require ROOT_PATH . '/src/templates/ubl_signature.php';
+        $populated_template = require 'templates/ubl_signature.php';
         $populated_template = str_replace('SET_INVOICE_HASH', $invoice_hash, $populated_template);
         $populated_template = str_replace('SET_SIGNED_PROPERTIES_HASH', $signed_properties_hash, $populated_template);
         $populated_template = str_replace('SET_DIGITAL_SIGNATURE', $digital_signature, $populated_template);
@@ -402,7 +402,7 @@ class InvoiceBuilder
          *      </cac:TaxSubtotal> ...
          * set invoice lines
          */
-        $tax_total_template = require ROOT_PATH . '/src/templates/tax_total_template.php';
+        $tax_total_template = require  'templates/tax_total_template.php';
 
         $item_lines = $this->constructTaxTotal($line_items);
 
@@ -426,7 +426,7 @@ class InvoiceBuilder
          * <cac:LegalMonetaryTotal>
          * $legal_monetary_total_template tags set
          */
-        $legal_monetary_total_template = require ROOT_PATH . '/src/templates/legal_monetary_total_template.php';
+        $legal_monetary_total_template = require  'templates/legal_monetary_total_template.php';
 
         $constructLegalMonetaryTotal = $this->constructLegalMonetaryTotal($total_subtotal, $total_taxes);
 
@@ -441,7 +441,7 @@ class InvoiceBuilder
          * <cac:InvoiceLine> ...
          * set invoice lines
          */
-        $invoice_line_template = require ROOT_PATH . '/src/templates/invoice_line_template.php';
+        $invoice_line_template = require  'templates/invoice_line_template.php';
 
         $invoice_line = '';
         foreach ($invoice_line_items as $item) {

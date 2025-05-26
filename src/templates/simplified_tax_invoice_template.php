@@ -1,6 +1,6 @@
 <?php
 
-require ROOT_PATH . '/src/templates/invoice_billing_reference_template.php';
+require ROOT_PATH . './invoice_billing_reference_template.php';
 
 /**
  * Maybe use a templating engine instead of str replace.

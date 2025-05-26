@@ -4,7 +4,7 @@ namespace  ZATCA;
 
 use GuzzleHttp\Client;
 use Exception;
-use Mode;
+use ZATCA\Mode;
 use stdClass;
 
 class API

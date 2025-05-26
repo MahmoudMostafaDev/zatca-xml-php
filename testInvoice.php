@@ -115,6 +115,11 @@ list($private_key, $csr) = $egs->generateNewKeysAndCSR('Jabbar Nasser Al-Bishi C
 list($request_id, $binary_security_token, $secret) = $egs->issueComplianceCertificate('272826', $csr);
 // build invoice
 
+echo 'one ' . $binary_security_token . PHP_EOL;
+echo "\n";
+echo 'two ' . $secret . PHP_EOL;
+echo 'private_key ' . $secret . PHP_EOL;
+
 list($request_id2, $binary_security_token2, $secret2) = $egs->issueProductionCertificate($binary_security_token, $secret, $request_id);
 
 

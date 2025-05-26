@@ -54,12 +54,12 @@ class Logger
     public static function createLogFile()
     {
         $time = date(static::$options['dateFormat']);
-        static::$log_file = ROOT_PATH . "/logs/log-{$time}.txt";
+        static::$log_file =  "../logs/log-{$time}.txt";
 
 
         //Check if directory /logs exists
-        if (!file_exists(ROOT_PATH . '/logs')) {
-            mkdir(ROOT_PATH . '/logs', 0777, true);
+        if (!file_exists('../logs')) {
+            mkdir('../logs', 0777, true);
         }
 
         //Create log file if it doesn't exist.
@@ -309,7 +309,7 @@ class Logger
     {
         $pathAbs = str_replace(['/', '\\'], '/', $pathToConvert);
         $documentRoot = str_replace(['/', '\\'], '/', $_SERVER['DOCUMENT_ROOT']);
-        return ROOT_PATH . str_replace($documentRoot, '', $pathAbs);
+        return "../" . str_replace($documentRoot, '', $pathAbs);
     }
 
     /**

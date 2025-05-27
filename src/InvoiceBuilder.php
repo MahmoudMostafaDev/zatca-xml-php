@@ -681,7 +681,6 @@ class InvoiceBuilder
 
 
         $taxes_total = 0;
-        echo '' . $line_items . '';
         array_map(function ($line_item) use (&$addTaxSubtotal, &$taxes_total) {
             $total_line_item_discount = $line_item['discount']['percentage'] > 0 ? $line_item['discount']['percentage'] * $line_item['tax_exclusive_price'] * $line_item['quantity'] : 0;
             $taxable_amount = ($line_item['tax_exclusive_price'] * $line_item['quantity']) - ($total_line_item_discount ?? 0);

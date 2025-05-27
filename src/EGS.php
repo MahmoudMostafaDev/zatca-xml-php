@@ -96,7 +96,7 @@ class EGS
             'production' => $this->production
         ];
 
-        $template_csr = require  '/templates/csr_template.php';
+        $template_csr = require  'templates/csr_template.php';
 
         $template_csr = str_replace('SET_PRIVATE_KEY_PASS', ($config['private_key_pass'] ?? 'SET_PRIVATE_KEY_PASS'), $template_csr);
         $template_csr = str_replace('SET_PRODUCTION_VALUE', ($config['production'] ? 'ZATCA-Code-Signing' : 'TSTZATCA-Code-Signing'), $template_csr);

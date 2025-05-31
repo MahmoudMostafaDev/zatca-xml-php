@@ -148,7 +148,7 @@ class API
             $response = json_decode($response_string);
 
             if ($http_code != 200 && $http_code != 202 && $http_code != 201) {
-                echo "\n " . $response_string . "\n";
+                echo "\n " . $response_string . "\n" . $http_code;
                 throw new Exception('Error in compliance check.');
             }
             return $response;
@@ -311,7 +311,7 @@ class API
         Logger::debug($response->getBody()->getContents(), ["http_code: {$http_code} /invoices/reporting/single"]);
         if ($http_code != 200 && $http_code != 202 && $http_code != 201) {
             echo $response->getBody()->getContents();
-            throw new Exception('Error in /invoices/reporting/single.');
+            throw new Exception('Error in /invoices/reporting/single.' . "HTTP Code: {$http_code}" . " Response: " . $response->getBody());
         }
 
         $response = json_decode($response->getBody());

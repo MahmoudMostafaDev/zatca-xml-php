@@ -250,7 +250,7 @@ class EGS
 
         //         $invoice_string = str_replace('SET_QR_CODE_DATA', $qr, $invoice_string);
 
-        return [$InvoicSigned->getInvoice(), $InvoicSigned->getHash(), $InvoicSigned->getQRCode()];
+        return [$InvoicSigned->getInvoice(), $InvoicSigned->getHash(), $InvoicSigned->getQRCode(), $invoice_xml->saveXML()];
     }
 
     public function checkInvoiceCompliance(string $signed_invoice_string, string $invoice_hash, string $certificate, string $secret, $invoice_uuid): string

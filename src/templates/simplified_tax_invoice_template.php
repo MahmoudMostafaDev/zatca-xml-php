@@ -79,9 +79,8 @@ return /* XML */
 				</cac:PartyLegalEntity>
         </cac:Party>
     </cac:AccountingCustomerParty>
-    <cac:Delivery>
-		<cbc:ActualDeliveryDate>__ActualDeliveryDate</cbc:ActualDeliveryDate>
-	</cac:Delivery>SET_PAYMENT_REFERENCE
+__ActualDeliveryDate
+SET_PAYMENT_REFERENCE
     PARSE_LINE_ITEMS
 </Invoice>
 XML;

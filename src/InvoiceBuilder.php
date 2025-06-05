@@ -78,7 +78,14 @@ class InvoiceBuilder
         $populated_template = str_replace('SET_VAT_NUMBER', $egs_unit['VAT_number'], $populated_template);
         $populated_template = str_replace('SET_VAT_NAME', $egs_unit['VAT_name'], $populated_template);
 
-        $populated_template = str_replace('__ActualDeliveryDate', $invoice['delivery_date'], $populated_template);
+        $delivery = "";
+        $deliveryDate = $invoice['delivery_date'];
+        if (isset($deliveryDate)) {
+            $delivery = "<cac:Delivery>
+		        <cbc:ActualDeliveryDate>$deliveryDate</cbc:ActualDeliveryDate>
+	        </cac:Delivery>";
+        }
+        $populated_template = str_replace('__ActualDeliveryDate', $delivery, $populated_template);
 
         $populated_template = str_replace('__registration_name', $egs_unit['AccountingCustomerParty']['__registration_name'], $populated_template);
 

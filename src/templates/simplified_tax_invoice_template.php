@@ -53,7 +53,7 @@ return /* XML */
             <cac:PostalAddress>
                 <cbc:StreetName>SET_STREET_NAME</cbc:StreetName>
                 <cbc:BuildingNumber>SET_BUILDING_NUMBER</cbc:BuildingNumber>
-                <cbc:PlotIdentification>SET_PLOT_IDENTIFICATION</cbc:PlotIdentification>
+                SET_PLOT_IDENTIFICATION
                 <cbc:CitySubdivisionName>SET_CITY_SUBDIVISION</cbc:CitySubdivisionName>
                 <cbc:CityName>SET_CITY</cbc:CityName>
                 <cbc:PostalZone>SET_POSTAL_NUMBER</cbc:PostalZone>

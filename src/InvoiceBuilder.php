@@ -70,7 +70,13 @@ class InvoiceBuilder
 
         $populated_template = str_replace('SET_STREET_NAME', $egs_unit['location']['street'], $populated_template);
         $populated_template = str_replace('SET_BUILDING_NUMBER', $egs_unit['location']['building'], $populated_template);
-        $populated_template = str_replace('SET_PLOT_IDENTIFICATION', $egs_unit['location']['plot_identification'], $populated_template);
+        //here
+        $plot = "";
+        $plotData = isset($egs_unit['location']['plot_identification']) ? $egs_unit['location']['plot_identification'] : null;
+        if (isset($plotData)) {
+            $plot = "<cbc:PlotIdentification>$plotData</cbc:PlotIdentification>";
+        }
+        $populated_template = str_replace('SET_PLOT_IDENTIFICATION', $plot, $populated_template);
         $populated_template = str_replace('SET_CITY_SUBDIVISION', $egs_unit['location']['city_subdivision'], $populated_template);
         $populated_template = str_replace('SET_CITY', $egs_unit['location']['city'], $populated_template);
         $populated_template = str_replace('SET_POSTAL_NUMBER', $egs_unit['location']['postal_zone'], $populated_template);
